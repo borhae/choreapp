@@ -29,6 +29,7 @@
     <input id="chore-name" placeholder="Chore name" list="chore-suggestions">
     <datalist id="chore-suggestions"></datalist>
     <button onclick="logChore()">Add</button>
+    <button onclick="logout()">Logout</button>
     <h3>Your logs</h3>
     <ul id="logs"></ul>
   </div>
@@ -62,6 +63,17 @@
     function showApp() {
       document.getElementById('auth').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
+    }
+
+    function showAuth() {
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('auth').classList.remove('hidden');
+    }
+
+    function logout() {
+      token = '';
+      localStorage.removeItem('token');
+      showAuth();
     }
 
     document.getElementById('chore-name').addEventListener('input', updateSuggestions);
