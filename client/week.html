@@ -34,6 +34,14 @@
     let weekOffset = 0;
     if (token) {
       loadWeek();
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}`);
+      ws.onmessage = evt => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'update') loadWeek();
+        } catch {}
+      };
     } else {
       document.getElementById('content').textContent = 'Please log in first';
     }

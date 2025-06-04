@@ -86,6 +86,18 @@
       const [selectedDay, setSelectedDay] = useState('');
       const username = JSON.parse(atob(token.split('.')[1])).username;
 
+      useEffect(() => {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws = new WebSocket(`${proto}://${location.host}`);
+        ws.onmessage = evt => {
+          try {
+            const msg = JSON.parse(evt.data);
+            if (msg.type === 'update') loadData();
+          } catch {}
+        };
+        return () => ws.close();
+      }, []);
+
       function startOfWeek(date) {
         const d = new Date(date);
         const day = d.getDay();

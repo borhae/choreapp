@@ -7,6 +7,8 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +16,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+function broadcastUpdate() {
+  const msg = JSON.stringify({ type: 'update' });
+  wss.clients.forEach(c => {
+    if (c.readyState === 1) c.send(msg);
+  });
+}
 
 const dbFile = process.env.DB_FILE || path.join(__dirname, 'db.json');
 const adapter = new JSONFile(dbFile);
@@ -95,6 +107,7 @@ app.post('/api/chores', authMiddleware, async (req, res) => {
   const log = { id: uuidv4(), userId: req.user.id, choreId: chore.id, ts: timestamp };
   db.data.logs.push(log);
   await db.write();
+  broadcastUpdate();
   res.json({ message: 'Logged', log });
 });
 
@@ -131,6 +144,7 @@ app.delete('/api/logs/:id', authMiddleware, async (req, res) => {
   }
   db.data.logs.splice(index, 1);
   await db.write();
+  broadcastUpdate();
   res.json({ message: 'Deleted' });
 });
 
@@ -150,4 +164,4 @@ app.get('/api/summary', authMiddleware, async (req, res) => {
 app.use(express.static(path.join(__dirname, '../client')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Server listening on', PORT));
+server.listen(PORT, () => console.log('Server listening on', PORT));

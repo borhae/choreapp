@@ -12,6 +12,9 @@ There is also a **Week overview** page showing the current week's chores. It
 lists chores in rows with days of the week as columns and displays the first
 three letters of each user's name when they completed a chore on that day.
 
+All open pages stay in sync thanks to a WebSocket connection. When a chore is
+added or removed in one browser, other connected clients update instantly.
+
 ## Setup
 
 Install dependencies:

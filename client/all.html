@@ -33,6 +33,14 @@
     if (token) {
       username = JSON.parse(atob(token.split('.')[1])).username;
       loadAllLogs();
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}`);
+      ws.onmessage = evt => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'update') loadAllLogs();
+        } catch {}
+      };
     } else {
       document.getElementById('all-logs').innerHTML = '<li>Please log in first</li>';
     }
