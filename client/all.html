@@ -4,30 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>All Chore Logs</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 1rem;
-      background-color: #f7f7f7;
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            p564: '#9ad9ce',
+            p604: '#f1e5ac'
+          }
+        }
+      }
     }
-    #wrapper {
-      max-width: 500px;
-      margin: auto;
-      padding: 1rem;
-      background: #fff;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    ul { list-style: none; padding-left: 0; }
-    .chore-group { margin-bottom: 1rem; }
-  </style>
+  </script>
 </head>
-<body>
-  <div id="wrapper">
-    <h1>All Chore Logs</h1>
-    <ul id="all-logs"></ul>
-    <a href="index.html">Back</a>
-    <a href="week.html">Week overview</a>
+<body class="font-sans bg-p564 min-h-screen p-4">
+  <div id="wrapper" class="max-w-md mx-auto p-4 bg-white rounded shadow">
+    <h1 class="text-2xl font-bold mb-2">All Chore Logs</h1>
+    <ul id="all-logs" class="list-none pl-0 mb-2"></ul>
+    <div class="flex justify-between">
+      <a href="index.html" class="text-blue-600 underline">Back</a>
+      <a href="week.html" class="text-blue-600 underline">Week overview</a>
+    </div>
   </div>
   <script>
     const token = localStorage.getItem('token') || '';
@@ -49,11 +47,12 @@
       list.innerHTML = '';
       Object.keys(grouped).forEach(chore => {
         const li = document.createElement('li');
-        li.className = 'chore-group';
+        li.className = 'mb-2';
         const title = document.createElement('strong');
         title.textContent = chore;
         li.appendChild(title);
         const inner = document.createElement('ul');
+        inner.className = 'list-disc pl-4';
         grouped[chore].forEach(l => {
           const il = document.createElement('li');
           const date = new Date(l.ts).toLocaleString();

@@ -4,58 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chore App</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 1rem;
-      background-color: #f7f7f7;
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            p564: '#9ad9ce',
+            p604: '#f1e5ac'
+          }
+        }
+      }
     }
-    #auth, #app {
-      max-width: 500px;
-      margin: auto;
-      padding: 1rem;
-      background: #fff;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    input, button {
-      padding: 0.5rem;
-      margin: 0.25rem 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    button { cursor: pointer; }
-    ul { list-style: none; padding-left: 0; }
-    .chore-group { margin-bottom: 1rem; }
-    .hidden { display: none; }
-  </style>
+  </script>
 </head>
-<body>
-  <h1>Chore App</h1>
-  <div id="auth">
-    <h2>Register</h2>
-    <input id="reg-user" placeholder="Username">
-    <input id="reg-pass" placeholder="Password" type="password">
-    <button onclick="register()">Register</button>
+<body class="font-sans bg-p564 min-h-screen p-4">
+  <h1 class="text-2xl font-bold text-center mb-4">Chore App</h1>
+  <div id="auth" class="max-w-md mx-auto p-4 bg-white rounded shadow">
+    <h2 class="text-xl font-semibold mb-2">Register</h2>
+    <input id="reg-user" placeholder="Username" class="border p-2 my-1 w-full rounded">
+    <input id="reg-pass" placeholder="Password" type="password" class="border p-2 my-1 w-full rounded">
+    <button onclick="register()" class="bg-p604 text-black rounded p-2 my-1 w-full">Register</button>
 
-    <h2>Login</h2>
-    <input id="login-user" placeholder="Username">
-    <input id="login-pass" placeholder="Password" type="password">
-    <button onclick="login()">Login</button>
+    <h2 class="text-xl font-semibold mt-4 mb-2">Login</h2>
+    <input id="login-user" placeholder="Username" class="border p-2 my-1 w-full rounded">
+    <input id="login-pass" placeholder="Password" type="password" class="border p-2 my-1 w-full rounded">
+    <button onclick="login()" class="bg-p604 text-black rounded p-2 my-1 w-full">Login</button>
   </div>
 
-  <div id="app" class="hidden">
-    <h2>Log a chore</h2>
-    <input id="chore-name" placeholder="Chore name" list="chore-suggestions">
+  <div id="app" class="max-w-md mx-auto p-4 bg-white rounded shadow hidden">
+    <h2 class="text-xl font-semibold mb-2">Log a chore</h2>
+    <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 my-1 w-full rounded">
     <datalist id="chore-suggestions"></datalist>
-    <button onclick="logChore()">Add</button>
-    <button onclick="logout()">Logout</button>
-    <a href="all.html">View all logs</a>
-    <a href="week.html">Week overview</a>
-    <h3>Your logs</h3>
-    <ul id="logs"></ul>
-    <h3>All logs</h3>
-    <ul id="all-logs"></ul>
+    <button onclick="logChore()" class="bg-p604 text-black rounded p-2 my-1 w-full">Add</button>
+    <button onclick="logout()" class="bg-gray-200 rounded p-2 my-1 w-full">Logout</button>
+    <div class="flex justify-between my-2">
+      <a href="all.html" class="text-blue-600 underline">View all logs</a>
+      <a href="week.html" class="text-blue-600 underline">Week overview</a>
+    </div>
+    <h3 class="font-semibold mt-2">Your logs</h3>
+    <ul id="logs" class="list-none pl-0"></ul>
+    <h3 class="font-semibold mt-2">All logs</h3>
+    <ul id="all-logs" class="list-none pl-0"></ul>
   </div>
 
   <script>
@@ -150,11 +140,12 @@
       list.innerHTML = '';
       Object.keys(grouped).forEach(chore => {
         const li = document.createElement('li');
-        li.className = 'chore-group';
+        li.className = 'mb-2';
         const title = document.createElement('strong');
         title.textContent = chore;
         li.appendChild(title);
         const inner = document.createElement('ul');
+        inner.className = 'list-disc pl-4';
         grouped[chore].forEach(l => {
           const il = document.createElement('li');
           const date = new Date(l.ts).toLocaleString();
