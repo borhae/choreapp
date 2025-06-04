@@ -118,10 +118,12 @@
           const day = ts.toLocaleDateString('en-US', { weekday: 'long' });
           const key = l.chore + '|' + day;
           if (!map[key]) {
-            map[key] = { choreId: l.chore, day, users: [] };
+            map[key] = { choreId: l.chore, day, entries: [] };
           }
           const abbrev = l.user.slice(0,3);
-          if (!map[key].users.includes(abbrev)) map[key].users.push(abbrev);
+          if (!map[key].entries.find(e => e.user === abbrev)) {
+            map[key].entries.push({ user: abbrev, id: l.id });
+          }
         });
         setChores(Array.from(chSet));
         setAssignments(Object.values(map));
@@ -141,6 +143,14 @@
         loadData();
       }
 
+      async function deleteLog(id) {
+        await fetch(`/api/logs/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadData();
+      }
+
       useEffect(() => {
         if (!newChore.trim()) { setSuggestions([]); return; }
         fetch('/api/chores/autocomplete?q=' + encodeURIComponent(newChore.trim()), {
@@ -150,7 +160,7 @@
 
       const getUsersForChoreAndDay = (chore, day) => {
         const a = assignments.find(x => x.choreId === chore && x.day === day);
-        return a ? a.users : [];
+        return a ? a.entries : [];
       };
 
       const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
@@ -199,8 +209,14 @@
                   {weekdays.map(day => (
                     <div key={chore + '-' + day} className="p-2 border min-h-[80px]">
                       <div className="flex flex-wrap gap-1">
-                        {getUsersForChoreAndDay(chore, day).map(user => (
-                          <span key={user} className="bg-pantone564 text-white text-xs px-1 rounded">{user}</span>
+                        {getUsersForChoreAndDay(chore, day).map(entry => (
+                          <span
+                            key={entry.id}
+                            onClick={() => deleteLog(entry.id)}
+                            className="cursor-pointer bg-pantone564 text-white text-xs px-1 rounded hover:line-through"
+                          >
+                            {entry.user}
+                          </span>
                         ))}
                       </div>
                     </div>
