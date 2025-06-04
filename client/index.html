@@ -133,11 +133,14 @@
 
       async function addChore() {
         if (!newChore.trim()) return;
-        const dayIndex = weekdays.indexOf(selectedDay);
-        if (dayIndex === -1) return;
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
+        let dayIndex = weekdays.indexOf(selectedDay);
+        if (dayIndex === -1) {
+          const todayIndex = (new Date().getDay() + 6) % 7; // make Monday=0
+          dayIndex = todayIndex;
+        }
         const tsDate = new Date(start);
-        tsDate.setDate(start.getDate() + (dayIndex >= 0 ? dayIndex : 0));
+        tsDate.setDate(start.getDate() + dayIndex);
         await fetch('/api/chores', {
           method: 'POST',
           headers: {
