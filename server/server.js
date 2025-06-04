@@ -98,6 +98,20 @@ app.get('/api/logs', authMiddleware, async (req, res) => {
   res.json(logsWithNames);
 });
 
+app.get('/api/logs/all', authMiddleware, async (req, res) => {
+  await db.read();
+  const logs = db.data.logs.map(l => {
+    const user = db.data.users.find(u => u.id === l.userId);
+    const chore = db.data.chores.find(c => c.id === l.choreId);
+    return {
+      ...l,
+      user: user ? user.username : 'unknown',
+      chore: chore ? chore.name : 'unknown',
+    };
+  });
+  res.json(logs);
+});
+
 app.get('/api/summary', authMiddleware, async (req, res) => {
   const from = parseInt(req.query.from) || 0;
   const to = parseInt(req.query.to) || Date.now();

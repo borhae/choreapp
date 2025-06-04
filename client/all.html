@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Chore Logs</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1rem; }
+    ul { padding-left: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>All Chore Logs</h1>
+  <ul id="all-logs"></ul>
+  <a href="index.html">Back</a>
+  <script>
+    const token = localStorage.getItem('token') || '';
+    if (token) {
+      loadAllLogs();
+    } else {
+      document.getElementById('all-logs').innerHTML = '<li>Please log in first</li>';
+    }
+
+    async function loadAllLogs() {
+      const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
+      const logs = await res.json();
+      const list = document.getElementById('all-logs');
+      list.innerHTML = '';
+      logs.forEach(l => {
+        const li = document.createElement('li');
+        const date = new Date(l.ts).toLocaleString();
+        li.textContent = `${date}: ${l.user} - ${l.chore}`;
+        list.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
