@@ -5,40 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chore App</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          p564: '#9ad9ce',
+          p604: '#f1e5ac'
+        }
+      }
+    }
+  }
+</script>
 </head>
-<body class="bg-gradient-to-br from-green-100 to-green-200 min-h-screen flex flex-col items-center justify-center font-sans">
+<body class="bg-p564 min-h-screen flex items-center justify-center font-sans">
 
-  <div class="w-full max-w-md p-6 bg-white rounded-xl shadow-md space-y-6">
-    <h1 class="text-3xl font-bold text-center text-green-800">Chore App</h1>
+  <div class="w-full max-w-md p-6 bg-white rounded-xl shadow space-y-6">
+    <h1 class="text-3xl font-bold text-center text-p564">Chore App</h1>
 
-    <!-- Authentication -->
     <div id="auth" class="space-y-4">
       <div>
         <h2 class="text-xl font-semibold mb-2">Register</h2>
-        <input id="reg-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
-        <input id="reg-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
-        <button onclick="register()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Register</button>
+        <input id="reg-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-p564">
+        <input id="reg-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-p564">
+        <button onclick="register()" class="bg-p604 hover:bg-yellow-200 text-black rounded p-2 w-full mt-2">Register</button>
       </div>
 
       <div>
         <h2 class="text-xl font-semibold mb-2">Login</h2>
-        <input id="login-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
-        <input id="login-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
-        <button onclick="login()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Login</button>
+        <input id="login-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-p564">
+        <input id="login-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-p564">
+        <button onclick="login()" class="bg-p604 hover:bg-yellow-200 text-black rounded p-2 w-full mt-2">Login</button>
       </div>
     </div>
 
-    <!-- App -->
     <div id="app" class="space-y-4 hidden">
       <h2 class="text-xl font-semibold">Log a chore</h2>
-      <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
+      <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-p564">
       <datalist id="chore-suggestions"></datalist>
-      <button onclick="logChore()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full">Add Chore</button>
+      <button onclick="logChore()" class="bg-p604 hover:bg-yellow-200 text-black rounded p-2 w-full">Add Chore</button>
       <button onclick="logout()" class="bg-gray-300 hover:bg-gray-400 text-black rounded p-2 w-full">Logout</button>
 
       <div class="flex justify-between gap-2">
-        <a href="all.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">View All</a>
-        <a href="week.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">Week Overview</a>
+        <a href="all.html" class="bg-p604 hover:bg-yellow-200 text-black rounded px-3 py-1 text-center w-1/2">View All</a>
+        <a href="week.html" class="bg-p604 hover:bg-yellow-200 text-black rounded px-3 py-1 text-center w-1/2">Week Overview</a>
       </div>
 
       <div>
@@ -53,115 +63,6 @@
     </div>
   </div>
 
-  <!-- Existing script remains the same -->
-  <script>
-    let token = localStorage.getItem('token') || '';
-    if (token) { showApp(); loadLogs(); loadAllLogs(); }
-
-    async function register() {
-      const username = document.getElementById('reg-user').value;
-      const password = document.getElementById('reg-pass').value;
-      await fetch('/api/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
-      alert('Registered! Please login.');
-    }
-
-    async function login() {
-      const username = document.getElementById('login-user').value;
-      const password = document.getElementById('login-pass').value;
-      const res = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
-      const data = await res.json();
-      if (data.token) {
-        token = data.token;
-        localStorage.setItem('token', token);
-        showApp();
-        loadLogs();
-        loadAllLogs();
-      } else {
-        alert('Login failed');
-      }
-    }
-
-    function showApp() {
-      document.getElementById('auth').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-    }
-
-    function showAuth() {
-      document.getElementById('app').classList.add('hidden');
-      document.getElementById('auth').classList.remove('hidden');
-    }
-
-    function logout() {
-      token = '';
-      localStorage.removeItem('token');
-      showAuth();
-    }
-
-    document.getElementById('chore-name').addEventListener('input', updateSuggestions);
-
-    async function updateSuggestions() {
-      const q = document.getElementById('chore-name').value;
-      if (!q) { document.getElementById('chore-suggestions').innerHTML=''; return; }
-      const res = await fetch('/api/chores/autocomplete?q=' + encodeURIComponent(q), {headers:{'Authorization':'Bearer '+token}});
-      const data = await res.json();
-      const list = document.getElementById('chore-suggestions');
-      list.innerHTML = '';
-      data.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        list.appendChild(option);
-      });
-    }
-
-    async function logChore() {
-      const name = document.getElementById('chore-name').value;
-      await fetch('/api/chores', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({name})});
-      document.getElementById('chore-name').value='';
-      loadLogs();
-      loadAllLogs();
-    }
-
-    async function loadLogs() {
-      const res = await fetch('/api/logs', {headers:{'Authorization':'Bearer '+token}});
-      const logs = await res.json();
-      const list = document.getElementById('logs');
-      list.innerHTML = '';
-      logs.forEach(l => {
-        const li = document.createElement('li');
-        const date = new Date(l.ts).toLocaleString();
-        li.textContent = `${date}: ${l.chore}`;
-        list.appendChild(li);
-      });
-    }
-
-    async function loadAllLogs() {
-      const res = await fetch('/api/logs/all', {headers:{'Authorization':'Bearer '+token}});
-      const logs = await res.json();
-      const grouped = {};
-      logs.forEach(l => {
-        grouped[l.chore] ||= [];
-        grouped[l.chore].push(l);
-      });
-      const list = document.getElementById('all-logs');
-      list.innerHTML = '';
-      Object.keys(grouped).forEach(chore => {
-        const li = document.createElement('li');
-        li.className = 'mb-2';
-        const title = document.createElement('strong');
-        title.textContent = chore;
-        li.appendChild(title);
-        const inner = document.createElement('ul');
-        inner.className = 'list-disc pl-4';
-        grouped[chore].forEach(l => {
-          const il = document.createElement('li');
-          const date = new Date(l.ts).toLocaleString();
-          il.textContent = `${date}: ${l.user}`;
-          inner.appendChild(il);
-        });
-        li.appendChild(inner);
-        list.appendChild(li);
-      });
-    }
-  </script>
+  <script src="client.js"></script>
 </body>
 </html>
