@@ -4,6 +4,8 @@ A simple multi-user chore logging application with a Node.js backend and static 
 
 The chore entry field now supports autocomplete so you can reuse existing chore names quickly.
 
+You can log out at any time using the **Logout** button in the app.
+
 ## Setup
 
 Install dependencies:
