@@ -20,4 +20,18 @@ Run the server:
 node server/server.js
 ```
 
+## Docker
+
+Build the image:
+
+```bash
+docker build -t choreapp .
+```
+
+Run the container with the database file mapped:
+
+```bash
+docker run -p 3000:3000 -v $(pwd)/server/db.json:/app/server/db.json choreapp
+```
+
 The app will be available at `http://localhost:3000`.
