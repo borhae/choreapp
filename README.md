@@ -22,20 +22,32 @@ node server/server.js
 
 The app will be available at `http://localhost:3000`.
 
-Authentication tokens expire after **1 day**, so you'll need to log in again once a token has expired.
-=======
+
 ## Docker
 
-Build the image:
+You can also run the app in a container. Build the image:
+
+Authentication tokens expire after **1 day**, so you'll need to log in again once a token has expired.
 
 ```bash
 docker build -t choreapp .
 ```
 
-Run the container with the database file mapped:
+Start the container and mount a host file to persist the database:
 
 ```bash
-docker run -p 3000:3000 -v $(pwd)/server/db.json:/app/server/db.json choreapp
+docker run -p 3000:3000 \
+  -v $(pwd)/db.json:/app/server/db.json \
+  choreapp
 ```
 
-The app will be available at `http://localhost:3000`.
+The server uses `/app/server/db.json` by default. You can specify a different
+location inside the container with the `DB_FILE` environment variable. Adjust
+the mounted path accordingly:
+
+```bash
+docker run -p 3000:3000 \
+  -e DB_FILE=/app/data/mydb.json \
+  -v $(pwd)/mydb.json:/app/data/mydb.json \
+  choreapp
+```

@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
 
-const dbFile = path.join(__dirname, 'db.json');
+const dbFile = process.env.DB_FILE || path.join(__dirname, 'db.json');
 const adapter = new JSONFile(dbFile);
 const db = new Low(adapter, { users: [], chores: [], logs: [] });
 
