@@ -1,53 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chore App</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            p564: '#9ad9ce',
-            p604: '#f1e5ac'
-          }
-        }
-      }
-    }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chore App</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="font-sans bg-p564 min-h-screen p-4">
-  <h1 class="text-2xl font-bold text-center mb-4">Chore App</h1>
-  <div id="auth" class="max-w-md mx-auto p-4 bg-white rounded shadow">
-    <h2 class="text-xl font-semibold mb-2">Register</h2>
-    <input id="reg-user" placeholder="Username" class="border p-2 my-1 w-full rounded">
-    <input id="reg-pass" placeholder="Password" type="password" class="border p-2 my-1 w-full rounded">
-    <button onclick="register()" class="bg-p604 text-black rounded p-2 my-1 w-full">Register</button>
+<body class="bg-gradient-to-br from-green-100 to-green-200 min-h-screen flex flex-col items-center justify-center font-sans">
 
-    <h2 class="text-xl font-semibold mt-4 mb-2">Login</h2>
-    <input id="login-user" placeholder="Username" class="border p-2 my-1 w-full rounded">
-    <input id="login-pass" placeholder="Password" type="password" class="border p-2 my-1 w-full rounded">
-    <button onclick="login()" class="bg-p604 text-black rounded p-2 my-1 w-full">Login</button>
-  </div>
+  <div class="w-full max-w-md p-6 bg-white rounded-xl shadow-md space-y-6">
+    <h1 class="text-3xl font-bold text-center text-green-800">Chore App</h1>
 
-  <div id="app" class="max-w-md mx-auto p-4 bg-white rounded shadow hidden">
-    <h2 class="text-xl font-semibold mb-2">Log a chore</h2>
-    <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 my-1 w-full rounded">
-    <datalist id="chore-suggestions"></datalist>
-    <button onclick="logChore()" class="bg-p604 text-black rounded p-2 my-1 w-full">Add</button>
-    <button onclick="logout()" class="bg-gray-200 rounded p-2 my-1 w-full">Logout</button>
-    <div class="flex justify-between my-2">
-      <a href="all.html" class="bg-p604 text-black rounded px-3 py-1 no-underline">View all logs</a>
-      <a href="week.html" class="bg-p604 text-black rounded px-3 py-1 no-underline">Week overview</a>
+    <!-- Authentication -->
+    <div id="auth" class="space-y-4">
+      <div>
+        <h2 class="text-xl font-semibold mb-2">Register</h2>
+        <input id="reg-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
+        <input id="reg-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
+        <button onclick="register()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Register</button>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-semibold mb-2">Login</h2>
+        <input id="login-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
+        <input id="login-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
+        <button onclick="login()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Login</button>
+      </div>
     </div>
-    <h3 class="font-semibold mt-2">Your logs</h3>
-    <ul id="logs" class="list-none pl-0"></ul>
-    <h3 class="font-semibold mt-2">All logs</h3>
-    <ul id="all-logs" class="list-none pl-0"></ul>
+
+    <!-- App -->
+    <div id="app" class="space-y-4 hidden">
+      <h2 class="text-xl font-semibold">Log a chore</h2>
+      <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
+      <datalist id="chore-suggestions"></datalist>
+      <button onclick="logChore()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full">Add Chore</button>
+      <button onclick="logout()" class="bg-gray-300 hover:bg-gray-400 text-black rounded p-2 w-full">Logout</button>
+
+      <div class="flex justify-between gap-2">
+        <a href="all.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">View All</a>
+        <a href="week.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">Week Overview</a>
+      </div>
+
+      <div>
+        <h3 class="font-semibold">Your logs</h3>
+        <ul id="logs" class="list-disc pl-5"></ul>
+      </div>
+
+      <div>
+        <h3 class="font-semibold">All logs</h3>
+        <ul id="all-logs" class="list-disc pl-5"></ul>
+      </div>
+    </div>
   </div>
 
+  <!-- Existing script remains the same -->
   <script>
     let token = localStorage.getItem('token') || '';
     if (token) { showApp(); loadLogs(); loadAllLogs(); }
