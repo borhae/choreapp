@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chore App</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1rem; }
+    input, button { padding: 0.5rem; margin: 0.25rem; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Chore App</h1>
+  <div id="auth">
+    <h2>Register</h2>
+    <input id="reg-user" placeholder="Username">
+    <input id="reg-pass" placeholder="Password" type="password">
+    <button onclick="register()">Register</button>
+
+    <h2>Login</h2>
+    <input id="login-user" placeholder="Username">
+    <input id="login-pass" placeholder="Password" type="password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="app" class="hidden">
+    <h2>Log a chore</h2>
+    <input id="chore-name" placeholder="Chore name" list="chore-suggestions">
+    <datalist id="chore-suggestions"></datalist>
+    <button onclick="logChore()">Add</button>
+    <button onclick="logout()">Logout</button>
+    <h3>Your logs</h3>
+    <ul id="logs"></ul>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('token') || '';
+    if (token) showApp();
+
+    async function register() {
+      const username = document.getElementById('reg-user').value;
+      const password = document.getElementById('reg-pass').value;
+      await fetch('/api/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
+      alert('Registered! Please login.');
+    }
+
+    async function login() {
+      const username = document.getElementById('login-user').value;
+      const password = document.getElementById('login-pass').value;
+      const res = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
+      const data = await res.json();
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem('token', token);
+        showApp();
+        loadLogs();
+      } else {
+        alert('Login failed');
+      }
+    }
+
+    function showApp() {
+      document.getElementById('auth').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+    }
+
+    function showAuth() {
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('auth').classList.remove('hidden');
+    }
+
+    function logout() {
+      token = '';
+      localStorage.removeItem('token');
+      showAuth();
+    }
+
+    document.getElementById('chore-name').addEventListener('input', updateSuggestions);
+
+    async function updateSuggestions() {
+      const q = document.getElementById('chore-name').value;
+      if (!q) { document.getElementById('chore-suggestions').innerHTML=''; return; }
+      const res = await fetch('/api/chores/autocomplete?q=' + encodeURIComponent(q), {headers:{'Authorization':'Bearer '+token}});
+      const data = await res.json();
+      const list = document.getElementById('chore-suggestions');
+      list.innerHTML = '';
+      data.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        list.appendChild(option);
+      });
+    }
+
+    async function logChore() {
+      const name = document.getElementById('chore-name').value;
+      await fetch('/api/chores', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({name})});
+      document.getElementById('chore-name').value='';
+      loadLogs();
+    }
+
+    async function loadLogs() {
+      const res = await fetch('/api/logs', {headers:{'Authorization':'Bearer '+token}});
+      const logs = await res.json();
+      const list = document.getElementById('logs');
+      list.innerHTML = '';
+      logs.forEach(l => {
+        const li = document.createElement('li');
+        const date = new Date(l.ts).toLocaleString();
+        li.textContent = `${date}: ${l.chore}`;
+        list.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
