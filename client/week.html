@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Overview</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      background-color: #f7f7f7;
+    }
+    #wrapper {
+      max-width: 600px;
+      margin: auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.25rem;
+      text-align: center;
+      min-width: 60px;
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <h1>Weekly Overview</h1>
+    <div id="content">Loading...</div>
+    <a href="index.html">Back</a>
+  </div>
+  <script>
+    const token = localStorage.getItem('token') || '';
+    if (token) {
+      loadWeek();
+    } else {
+      document.getElementById('content').textContent = 'Please log in first';
+    }
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = (day + 6) % 7; // make Monday start
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() - diff);
+      return d;
+    }
+
+    async function loadWeek() {
+      const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
+      const logs = await res.json();
+      const start = startOfWeek(Date.now());
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        days.push(d);
+      }
+      const chores = {};
+      logs.forEach(l => {
+        const ts = new Date(l.ts);
+        const dayIndex = Math.floor((ts - start) / 86400000);
+        if (dayIndex < 0 || dayIndex > 6) return;
+        chores[l.chore] ||= Array.from({length:7}, () => []);
+        const abbrev = l.user.slice(0,3);
+        if (!chores[l.chore][dayIndex].includes(abbrev)) {
+          chores[l.chore][dayIndex].push(abbrev);
+        }
+      });
+      const table = document.createElement('table');
+      const head = document.createElement('tr');
+      head.appendChild(document.createElement('th'));
+      days.forEach(d => {
+        const th = document.createElement('th');
+        th.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
+        head.appendChild(th);
+      });
+      table.appendChild(head);
+      Object.keys(chores).sort().forEach(ch => {
+        const tr = document.createElement('tr');
+        const tdTitle = document.createElement('td');
+        tdTitle.textContent = ch;
+        tr.appendChild(tdTitle);
+        for (let i=0;i<7;i++) {
+          const td = document.createElement('td');
+          td.textContent = chores[ch][i].join(' ');
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      });
+      document.getElementById('content').innerHTML = '';
+      document.getElementById('content').appendChild(table);
+    }
+  </script>
+</body>
+</html>
