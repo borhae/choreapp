@@ -1,0 +1,22 @@
+{
+  "name": "choreapp",
+  "version": "1.0.0",
+  "description": "Yet another chore app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests\"",
+    "start": "node server/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lowdb": "^7.0.1",
+    "morgan": "^1.10.0",
+    "uuid": "^11.1.0"
+  }
+}
