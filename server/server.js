@@ -26,7 +26,9 @@ async function initDB() {
 }
 initDB();
 
-const SECRET = 'replace-this-secret';
+// Secret used for signing JWT tokens. Can be overridden by the SECRET
+// environment variable.
+const SECRET = process.env.SECRET || 'replace-this-secret';
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization || '';
