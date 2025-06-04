@@ -26,7 +26,8 @@
 
   <div id="app" class="hidden">
     <h2>Log a chore</h2>
-    <input id="chore-name" placeholder="Chore name">
+    <input id="chore-name" placeholder="Chore name" list="chore-suggestions">
+    <datalist id="chore-suggestions"></datalist>
     <button onclick="logChore()">Add</button>
     <h3>Your logs</h3>
     <ul id="logs"></ul>
@@ -61,6 +62,22 @@
     function showApp() {
       document.getElementById('auth').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
+    }
+
+    document.getElementById('chore-name').addEventListener('input', updateSuggestions);
+
+    async function updateSuggestions() {
+      const q = document.getElementById('chore-name').value;
+      if (!q) { document.getElementById('chore-suggestions').innerHTML=''; return; }
+      const res = await fetch('/api/chores/autocomplete?q=' + encodeURIComponent(q), {headers:{'Authorization':'Bearer '+token}});
+      const data = await res.json();
+      const list = document.getElementById('chore-suggestions');
+      list.innerHTML = '';
+      data.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        list.appendChild(option);
+      });
     }
 
     async function logChore() {
