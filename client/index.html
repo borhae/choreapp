@@ -94,7 +94,9 @@
           chSet.add(l.chore);
           const day = new Date(l.ts).toLocaleDateString('en-US', { weekday: 'long' });
           const key = l.chore + '|' + day;
-          map[key] ||= { choreId: l.chore, day, users: [] };
+          if (!map[key]) {
+            map[key] = { choreId: l.chore, day, users: [] };
+          }
           const abbrev = l.user.slice(0,3);
           if (!map[key].users.includes(abbrev)) map[key].users.push(abbrev);
         });

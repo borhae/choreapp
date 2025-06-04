@@ -40,7 +40,9 @@
       const logs = await res.json();
       const grouped = {};
       logs.forEach(l => {
-        grouped[l.chore] ||= [];
+        if (!grouped[l.chore]) {
+          grouped[l.chore] = [];
+        }
         grouped[l.chore].push(l);
       });
       const list = document.getElementById('all-logs');

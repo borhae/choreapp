@@ -56,7 +56,9 @@
         const ts = new Date(l.ts);
         const dayIndex = Math.floor((ts - start) / 86400000);
         if (dayIndex < 0 || dayIndex > 6) return;
-        chores[l.chore] ||= Array.from({length:7}, () => []);
+        if (!chores[l.chore]) {
+          chores[l.chore] = Array.from({length:7}, () => []);
+        }
         const abbrev = l.user.slice(0,3);
         if (!chores[l.chore][dayIndex].includes(abbrev)) {
           chores[l.chore][dayIndex].push(abbrev);
