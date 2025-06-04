@@ -1,167 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chore App</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-green-100 to-green-200 min-h-screen flex flex-col items-center justify-center font-sans">
-
-  <div class="w-full max-w-md p-6 bg-white rounded-xl shadow-md space-y-6">
-    <h1 class="text-3xl font-bold text-center text-green-800">Chore App</h1>
-
-    <!-- Authentication -->
-    <div id="auth" class="space-y-4">
-      <div>
-        <h2 class="text-xl font-semibold mb-2">Register</h2>
-        <input id="reg-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
-        <input id="reg-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
-        <button onclick="register()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Register</button>
-      </div>
-
-      <div>
-        <h2 class="text-xl font-semibold mb-2">Login</h2>
-        <input id="login-user" placeholder="Username" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
-        <input id="login-pass" placeholder="Password" type="password" class="border p-2 w-full rounded mt-2 focus:outline-none focus:ring focus:border-green-400">
-        <button onclick="login()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full mt-2">Login</button>
-      </div>
-    </div>
-
-    <!-- App -->
-    <div id="app" class="space-y-4 hidden">
-      <h2 class="text-xl font-semibold">Log a chore</h2>
-      <input id="chore-name" placeholder="Chore name" list="chore-suggestions" class="border p-2 w-full rounded focus:outline-none focus:ring focus:border-green-400">
-      <datalist id="chore-suggestions"></datalist>
-      <button onclick="logChore()" class="bg-green-500 hover:bg-green-600 text-white rounded p-2 w-full">Add Chore</button>
-      <button onclick="logout()" class="bg-gray-300 hover:bg-gray-400 text-black rounded p-2 w-full">Logout</button>
-
-      <div class="flex justify-between gap-2">
-        <a href="all.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">View All</a>
-        <a href="week.html" class="bg-green-400 hover:bg-green-500 text-white rounded px-3 py-1 text-center w-1/2">Week Overview</a>
-      </div>
-
-      <div>
-        <h3 class="font-semibold">Your logs</h3>
-        <ul id="logs" class="list-disc pl-5"></ul>
-      </div>
-
-      <div>
-        <h3 class="font-semibold">All logs</h3>
-        <ul id="all-logs" class="list-disc pl-5"></ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- Existing script remains the same -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chore Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    let token = localStorage.getItem('token') || '';
-    if (token) { showApp(); loadLogs(); loadAllLogs(); }
-
-    async function register() {
-      const username = document.getElementById('reg-user').value;
-      const password = document.getElementById('reg-pass').value;
-      await fetch('/api/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
-      alert('Registered! Please login.');
-    }
-
-    async function login() {
-      const username = document.getElementById('login-user').value;
-      const password = document.getElementById('login-pass').value;
-      const res = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password})});
-      const data = await res.json();
-      if (data.token) {
-        token = data.token;
-        localStorage.setItem('token', token);
-        showApp();
-        loadLogs();
-        loadAllLogs();
-      } else {
-        alert('Login failed');
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pantone564: '#4F9A94',
+            pantone604: '#E8BBE8',
+          }
+        }
       }
     }
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-pantone604/10 to-pantone564/10 min-h-screen flex items-center justify-center">
+  <div id="root" class="w-full"></div>
 
-    function showApp() {
-      document.getElementById('auth').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
+  <script type="text/babel">
+    const { useState } = React;
+
+    function ChoreTracker() {
+      const [newChore, setNewChore] = useState("");
+      const [chores, setChores] = useState(["Dishes", "Vacuum Living Room", "Take Out Trash", "Clean Bathroom", "Laundry"]);
+
+      const [assignments, setAssignments] = useState([
+        { choreId: "Dishes", day: "Monday", users: ["Alice", "Bob"] },
+        { choreId: "Dishes", day: "Wednesday", users: ["Charlie"] },
+        { choreId: "Vacuum Living Room", day: "Tuesday", users: ["Alice"] },
+        { choreId: "Take Out Trash", day: "Thursday", users: ["Bob", "Charlie"] },
+        { choreId: "Clean Bathroom", day: "Saturday", users: ["Alice"] },
+        { choreId: "Laundry", day: "Sunday", users: ["Charlie"] },
+      ]);
+
+      const [newUser, setNewUser] = useState("");
+      const [selectedCell, setSelectedCell] = useState(null);
+
+      const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+      const addChore = () => {
+        if (newChore.trim() && !chores.includes(newChore.trim())) {
+          setChores([...chores, newChore.trim()]);
+          setNewChore("");
+        }
+      };
+
+      const getUsersForChoreAndDay = (chore, day) => {
+        const assignment = assignments.find(a => a.choreId === chore && a.day === day);
+        return assignment ? assignment.users : [];
+      };
+
+      const addUserToChore = (chore, day, user) => {
+        if (!user.trim()) return;
+        const existing = assignments.find(a => a.choreId === chore && a.day === day);
+        if (existing) {
+          if (!existing.users.includes(user)) {
+            setAssignments(assignments.map(a => a.choreId === chore && a.day === day ? { ...a, users: [...a.users, user] } : a));
+          }
+        } else {
+          setAssignments([...assignments, { choreId: chore, day, users: [user] }]);
+        }
+        setNewUser("");
+        setSelectedCell(null);
+      };
+
+      const removeUserFromChore = (chore, day, user) => {
+        setAssignments(
+          assignments
+            .map(a => a.choreId === chore && a.day === day ? { ...a, users: a.users.filter(u => u !== user) } : a)
+            .filter(a => a.users.length > 0)
+        );
+      };
+
+      return (
+        <div className="p-6 max-w-7xl mx-auto">
+          <div className="mb-6 bg-white rounded shadow p-4">
+            <h2 className="text-lg font-bold text-pantone564 mb-3">Chore Tracker</h2>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 border p-2 rounded"
+                placeholder="Enter chore name..."
+                value={newChore}
+                onChange={e => setNewChore(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addChore()}
+              />
+              <button
+                className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded"
+                onClick={addChore}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded shadow p-4 overflow-x-auto">
+            <h3 className="text-lg font-bold text-pantone564 mb-3">Weekly Overview</h3>
+            <div className="grid grid-cols-8 gap-2 min-w-[800px]">
+              <div className="font-semibold p-3 text-center">Chores</div>
+              {weekdays.map(day => (
+                <div key={day} className="font-semibold p-3 text-center border-b bg-pantone604/30 text-pantone564">
+                  {day}
+                </div>
+              ))}
+              {chores.map(chore => (
+                <div key={chore} className="contents">
+                  <div className="font-medium p-3 border-r bg-pantone564/20 flex items-center text-pantone564">
+                    {chore}
+                  </div>
+                  {weekdays.map(day => {
+                    const users = getUsersForChoreAndDay(chore, day);
+                    const isSelected = selectedCell && selectedCell.chore === chore && selectedCell.day === day;
+                    return (
+                      <div
+                        key={`${chore}-${day}`}
+                        className={`p-2 border min-h-[80px] cursor-pointer transition-colors ${isSelected ? 'bg-pantone604/30' : 'hover:bg-pantone604/20'}`}
+                        onClick={() => setSelectedCell(isSelected ? null : { chore, day })}
+                      >
+                        <div className="flex flex-wrap gap-1">
+                          {users.map(user => (
+                            <span
+                              key={user}
+                              className="bg-pantone564 text-white text-xs flex items-center gap-1 px-1 rounded"
+                            >
+                              {user}
+                              <svg
+                                onClick={e => { e.stopPropagation(); removeUserFromChore(chore, day, user); }}
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-3 h-3 cursor-pointer hover:text-red-500"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </span>
+                          ))}
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 flex gap-1" onClick={e => e.stopPropagation()}>
+                            <input
+                              className="text-xs border rounded h-6 px-1"
+                              placeholder="User name"
+                              value={newUser}
+                              onChange={e => setNewUser(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') addUserToChore(chore, day, newUser);
+                                if (e.key === 'Escape') { setSelectedCell(null); setNewUser(''); }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              className="h-6 px-2 bg-pantone604 hover:bg-pantone604/90 text-pantone564 rounded text-xs"
+                              onClick={() => addUserToChore(chore, day, newUser)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                        {!isSelected && users.length === 0 && (
+                          <div className="text-xs text-gray-500 text-center mt-2">Click to assign</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
     }
 
-    function showAuth() {
-      document.getElementById('app').classList.add('hidden');
-      document.getElementById('auth').classList.remove('hidden');
-    }
-
-    function logout() {
-      token = '';
-      localStorage.removeItem('token');
-      showAuth();
-    }
-
-    document.getElementById('chore-name').addEventListener('input', updateSuggestions);
-
-    async function updateSuggestions() {
-      const q = document.getElementById('chore-name').value;
-      if (!q) { document.getElementById('chore-suggestions').innerHTML=''; return; }
-      const res = await fetch('/api/chores/autocomplete?q=' + encodeURIComponent(q), {headers:{'Authorization':'Bearer '+token}});
-      const data = await res.json();
-      const list = document.getElementById('chore-suggestions');
-      list.innerHTML = '';
-      data.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        list.appendChild(option);
-      });
-    }
-
-    async function logChore() {
-      const name = document.getElementById('chore-name').value;
-      await fetch('/api/chores', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({name})});
-      document.getElementById('chore-name').value='';
-      loadLogs();
-      loadAllLogs();
-    }
-
-    async function loadLogs() {
-      const res = await fetch('/api/logs', {headers:{'Authorization':'Bearer '+token}});
-      const logs = await res.json();
-      const list = document.getElementById('logs');
-      list.innerHTML = '';
-      logs.forEach(l => {
-        const li = document.createElement('li');
-        const date = new Date(l.ts).toLocaleString();
-        li.textContent = `${date}: ${l.chore}`;
-        list.appendChild(li);
-      });
-    }
-
-    async function loadAllLogs() {
-      const res = await fetch('/api/logs/all', {headers:{'Authorization':'Bearer '+token}});
-      const logs = await res.json();
-      const grouped = {};
-      logs.forEach(l => {
-        grouped[l.chore] ||= [];
-        grouped[l.chore].push(l);
-      });
-      const list = document.getElementById('all-logs');
-      list.innerHTML = '';
-      Object.keys(grouped).forEach(chore => {
-        const li = document.createElement('li');
-        li.className = 'mb-2';
-        const title = document.createElement('strong');
-        title.textContent = chore;
-        li.appendChild(title);
-        const inner = document.createElement('ul');
-        inner.className = 'list-disc pl-4';
-        grouped[chore].forEach(l => {
-          const il = document.createElement('li');
-          const date = new Date(l.ts).toLocaleString();
-          il.textContent = `${date}: ${l.user}`;
-          inner.appendChild(il);
-        });
-        li.appendChild(inner);
-        list.appendChild(li);
-      });
-    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<ChoreTracker />);
   </script>
 </body>
 </html>
