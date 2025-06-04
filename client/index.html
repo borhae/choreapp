@@ -83,6 +83,7 @@
       const [suggestions, setSuggestions] = useState([]);
       const [weekOffset, setWeekOffset] = useState(0);
       const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      const [selectedDay, setSelectedDay] = useState(weekdays[(new Date().getDay() + 6) % 7]);
       const username = JSON.parse(atob(token.split('.')[1])).username;
 
       function startOfWeek(date) {
@@ -132,13 +133,17 @@
 
       async function addChore() {
         if (!newChore.trim()) return;
+        const dayIndex = weekdays.indexOf(selectedDay);
+        const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
+        const tsDate = new Date(start);
+        tsDate.setDate(start.getDate() + (dayIndex >= 0 ? dayIndex : 0));
         await fetch('/api/chores', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ name: newChore.trim() })
+          body: JSON.stringify({ name: newChore.trim(), ts: tsDate.getTime() })
         });
         setNewChore('');
         loadData();
@@ -186,6 +191,15 @@
               <datalist id="chore-suggestions">
                 {suggestions.map(name => <option key={name} value={name} />)}
               </datalist>
+              <select
+                value={selectedDay}
+                onChange={e => setSelectedDay(e.target.value)}
+                className="border p-2 rounded"
+              >
+                {weekdays.map(day => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
               <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addChore}>Add</button>
               <a href="all.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">All Logs</a>
               <button className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded" onClick={onLogout}>Logout</button>
