@@ -39,7 +39,7 @@
         try {
           const msg = JSON.parse(evt.data);
           if (msg.type === 'update') loadAllLogs();
-        } catch {}
+        } catch (err) {}
       };
     } else {
       document.getElementById('all-logs').innerHTML = '<li>Please log in first</li>';
