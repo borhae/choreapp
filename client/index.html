@@ -5,8 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chore App</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 1rem; }
-    input, button { padding: 0.5rem; margin: 0.25rem; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      background-color: #f7f7f7;
+    }
+    #auth, #app {
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button { cursor: pointer; }
+    ul { list-style: none; padding-left: 0; }
+    .chore-group { margin-bottom: 1rem; }
     .hidden { display: none; }
   </style>
 </head>
@@ -33,11 +53,13 @@
     <a href="all.html">View all logs</a>
     <h3>Your logs</h3>
     <ul id="logs"></ul>
+    <h3>All logs</h3>
+    <ul id="all-logs"></ul>
   </div>
 
   <script>
     let token = localStorage.getItem('token') || '';
-    if (token) showApp();
+    if (token) { showApp(); loadLogs(); loadAllLogs(); }
 
     async function register() {
       const username = document.getElementById('reg-user').value;
@@ -56,6 +78,7 @@
         localStorage.setItem('token', token);
         showApp();
         loadLogs();
+        loadAllLogs();
       } else {
         alert('Login failed');
       }
@@ -98,6 +121,7 @@
       await fetch('/api/chores', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({name})});
       document.getElementById('chore-name').value='';
       loadLogs();
+      loadAllLogs();
     }
 
     async function loadLogs() {
@@ -109,6 +133,34 @@
         const li = document.createElement('li');
         const date = new Date(l.ts).toLocaleString();
         li.textContent = `${date}: ${l.chore}`;
+        list.appendChild(li);
+      });
+    }
+
+    async function loadAllLogs() {
+      const res = await fetch('/api/logs/all', {headers:{'Authorization':'Bearer '+token}});
+      const logs = await res.json();
+      const grouped = {};
+      logs.forEach(l => {
+        grouped[l.chore] ||= [];
+        grouped[l.chore].push(l);
+      });
+      const list = document.getElementById('all-logs');
+      list.innerHTML = '';
+      Object.keys(grouped).forEach(chore => {
+        const li = document.createElement('li');
+        li.className = 'chore-group';
+        const title = document.createElement('strong');
+        title.textContent = chore;
+        li.appendChild(title);
+        const inner = document.createElement('ul');
+        grouped[chore].forEach(l => {
+          const il = document.createElement('li');
+          const date = new Date(l.ts).toLocaleString();
+          il.textContent = `${date}: ${l.user}`;
+          inner.appendChild(il);
+        });
+        li.appendChild(inner);
         list.appendChild(li);
       });
     }

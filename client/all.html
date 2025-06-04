@@ -5,14 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>All Chore Logs</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 1rem; }
-    ul { padding-left: 1.5rem; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      background-color: #f7f7f7;
+    }
+    #wrapper {
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    ul { list-style: none; padding-left: 0; }
+    .chore-group { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <h1>All Chore Logs</h1>
-  <ul id="all-logs"></ul>
-  <a href="index.html">Back</a>
+  <div id="wrapper">
+    <h1>All Chore Logs</h1>
+    <ul id="all-logs"></ul>
+    <a href="index.html">Back</a>
+  </div>
   <script>
     const token = localStorage.getItem('token') || '';
     if (token) {
@@ -24,12 +39,27 @@
     async function loadAllLogs() {
       const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
       const logs = await res.json();
+      const grouped = {};
+      logs.forEach(l => {
+        grouped[l.chore] ||= [];
+        grouped[l.chore].push(l);
+      });
       const list = document.getElementById('all-logs');
       list.innerHTML = '';
-      logs.forEach(l => {
+      Object.keys(grouped).forEach(chore => {
         const li = document.createElement('li');
-        const date = new Date(l.ts).toLocaleString();
-        li.textContent = `${date}: ${l.user} - ${l.chore}`;
+        li.className = 'chore-group';
+        const title = document.createElement('strong');
+        title.textContent = chore;
+        li.appendChild(title);
+        const inner = document.createElement('ul');
+        grouped[chore].forEach(l => {
+          const il = document.createElement('li');
+          const date = new Date(l.ts).toLocaleString();
+          il.textContent = `${date}: ${l.user}`;
+          inner.appendChild(il);
+        });
+        li.appendChild(inner);
         list.appendChild(li);
       });
     }
