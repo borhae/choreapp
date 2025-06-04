@@ -21,3 +21,8 @@ node server/server.js
 ```
 
 The app will be available at `http://localhost:3000`.
+
+## Environment variables
+
+`SECRET` sets the token signing secret for the server. If not provided, the
+default `"replace-this-secret"` is used.
