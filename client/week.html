@@ -40,7 +40,7 @@
         try {
           const msg = JSON.parse(evt.data);
           if (msg.type === 'update') loadWeek();
-        } catch {}
+        } catch (err) {}
       };
     } else {
       document.getElementById('content').textContent = 'Please log in first';

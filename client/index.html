@@ -93,7 +93,7 @@
           try {
             const msg = JSON.parse(evt.data);
             if (msg.type === 'update') loadData();
-          } catch {}
+          } catch (err) {}
         };
         return () => ws.close();
       }, []);
