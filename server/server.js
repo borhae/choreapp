@@ -39,6 +39,9 @@ function authMiddleware(req, res, next) {
     req.user = payload;
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
     return res.status(401).json({ error: 'Invalid token' });
   }
 }
@@ -64,7 +67,11 @@ app.post('/api/login', async (req, res) => {
   if (!user) return res.status(400).json({ error: 'Invalid credentials' });
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(400).json({ error: 'Invalid credentials' });
-  const token = jwt.sign({ id: user.id, username: user.username }, SECRET);
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    SECRET,
+    { expiresIn: '1d' }
+  );
   res.json({ token });
 });
 
