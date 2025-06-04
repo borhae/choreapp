@@ -83,7 +83,7 @@ app.get('/api/chores/autocomplete', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/chores', authMiddleware, async (req, res) => {
-  const { name } = req.body;
+  const { name, ts } = req.body;
   if (!name) return res.status(400).json({ error: 'Missing chore name' });
   await db.read();
   let chore = db.data.chores.find(c => c.name.toLowerCase() === name.toLowerCase());
@@ -91,7 +91,8 @@ app.post('/api/chores', authMiddleware, async (req, res) => {
     chore = { id: uuidv4(), name };
     db.data.chores.push(chore);
   }
-  const log = { id: uuidv4(), userId: req.user.id, choreId: chore.id, ts: Date.now() };
+  const timestamp = Number.isFinite(Number(ts)) ? Number(ts) : Date.now();
+  const log = { id: uuidv4(), userId: req.user.id, choreId: chore.id, ts: timestamp };
   db.data.logs.push(log);
   await db.write();
   res.json({ message: 'Logged', log });
