@@ -1,97 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weekly Overview</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            p564: '#9ad9ce',
-            p604: '#f1e5ac'
-          }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week Overview</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          p564: '#9ad9ce',
+          p604: '#f1e5ac'
         }
       }
     }
-  </script>
+  }
+</script>
 </head>
-<body class="font-sans bg-p564 min-h-screen p-4">
-  <div id="wrapper" class="max-w-xl mx-auto p-4 bg-white rounded shadow overflow-x-auto">
-    <h1 class="text-2xl font-bold mb-2">Weekly Overview</h1>
-    <div id="content" class="mb-2">Loading...</div>
-    <a href="index.html" class="bg-p604 text-black rounded px-3 py-1 no-underline">Back</a>
+<body class="bg-p564 min-h-screen flex items-center justify-center font-sans">
+
+  <div class="w-full max-w-2xl p-6 bg-white rounded-xl shadow space-y-4">
+    <h1 class="text-2xl font-bold text-center text-p564">Week Overview</h1>
+
+    <a href="index.html" class="bg-p604 hover:bg-yellow-200 text-black rounded px-3 py-1 block text-center">Back</a>
+
+    <ul id="week-logs" class="list-disc pl-5"></ul>
   </div>
+
   <script>
-    const token = localStorage.getItem('token') || '';
-    if (token) {
-      loadWeek();
-    } else {
-      document.getElementById('content').textContent = 'Please log in first';
-    }
-
-    function startOfWeek(date) {
-      const d = new Date(date);
-      const day = d.getDay();
-      const diff = (day + 6) % 7; // make Monday start
-      d.setHours(0,0,0,0);
-      d.setDate(d.getDate() - diff);
-      return d;
-    }
-
     async function loadWeek() {
-      const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
+      const res = await fetch('/api/logs/week');
       const logs = await res.json();
-      const start = startOfWeek(Date.now());
-      const days = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        days.push(d);
-      }
-      const chores = {};
+      const list = document.getElementById('week-logs');
       logs.forEach(l => {
-        const ts = new Date(l.ts);
-        const dayIndex = Math.floor((ts - start) / 86400000);
-        if (dayIndex < 0 || dayIndex > 6) return;
-        chores[l.chore] ||= Array.from({length:7}, () => []);
-        const abbrev = l.user.slice(0,3);
-        if (!chores[l.chore][dayIndex].includes(abbrev)) {
-          chores[l.chore][dayIndex].push(abbrev);
-        }
+        const li = document.createElement('li');
+        const date = new Date(l.ts).toLocaleString();
+        li.textContent = `${date}: ${l.chore} (${l.user})`;
+        list.appendChild(li);
       });
-      const table = document.createElement('table');
-      table.className = 'border-collapse w-full text-sm';
-      const head = document.createElement('tr');
-      const empty = document.createElement('th');
-      empty.className = 'border bg-p604 px-1';
-      head.appendChild(empty);
-      days.forEach(d => {
-        const th = document.createElement('th');
-        th.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
-        th.className = 'border bg-p604 px-1';
-        head.appendChild(th);
-      });
-      table.appendChild(head);
-      Object.keys(chores).sort().forEach(ch => {
-        const tr = document.createElement('tr');
-        const tdTitle = document.createElement('td');
-        tdTitle.textContent = ch;
-        tdTitle.className = 'border px-1 font-semibold bg-gray-50';
-        tr.appendChild(tdTitle);
-        for (let i=0;i<7;i++) {
-          const td = document.createElement('td');
-          td.textContent = chores[ch][i].join(' ');
-          td.className = 'border px-1';
-          tr.appendChild(td);
-        }
-        table.appendChild(tr);
-      });
-      document.getElementById('content').innerHTML = '';
-      document.getElementById('content').appendChild(table);
     }
+    loadWeek();
   </script>
 </body>
 </html>
