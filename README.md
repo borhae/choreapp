@@ -22,9 +22,12 @@ node server/server.js
 
 The app will be available at `http://localhost:3000`.
 
+
 ## Docker
 
 You can also run the app in a container. Build the image:
+
+Authentication tokens expire after **1 day**, so you'll need to log in again once a token has expired.
 
 ```bash
 docker build -t choreapp .
