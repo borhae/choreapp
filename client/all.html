@@ -29,7 +29,9 @@
   </div>
   <script>
     const token = localStorage.getItem('token') || '';
+    let username = '';
     if (token) {
+      username = JSON.parse(atob(token.split('.')[1])).username;
       loadAllLogs();
     } else {
       document.getElementById('all-logs').innerHTML = '<li>Please log in first</li>';
@@ -59,14 +61,18 @@
           const il = document.createElement('li');
           const date = new Date(l.ts).toLocaleString();
           il.textContent = `${date}: ${l.user}`;
-          il.className = 'cursor-pointer hover:line-through';
-          il.addEventListener('click', async () => {
-            await fetch(`/api/logs/${l.id}`, {
-              method: 'DELETE',
-              headers: { 'Authorization': 'Bearer ' + token }
+          if (l.user === username) {
+            il.className = 'cursor-pointer hover:line-through';
+            il.addEventListener('click', async () => {
+              await fetch(`/api/logs/${l.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              loadAllLogs();
             });
-            loadAllLogs();
-          });
+          } else {
+            il.className = 'text-gray-500';
+          }
           inner.appendChild(il);
         });
         li.appendChild(inner);
