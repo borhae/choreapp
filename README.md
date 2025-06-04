@@ -1,6 +1,6 @@
 # Chore App
 
-A simple multi-user chore logging application with a Node.js backend and static frontend. The UI uses [Tailwind CSS](https://tailwindcss.com/) themed with colors inspired by Pantone 564 and Pantone 604.
+A multi-user chore logging application with a Node.js backend and static frontend. The UI uses [Tailwind CSS](https://tailwindcss.com/) themed with colors inspired by Pantone 564 and Pantone 604.
 
 The chore entry field now supports autocomplete so you can reuse existing chore names quickly.
 
