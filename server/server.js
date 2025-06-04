@@ -121,6 +121,18 @@ app.get('/api/logs/all', authMiddleware, async (req, res) => {
   res.json(logs);
 });
 
+app.delete('/api/logs/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  await db.read();
+  const index = db.data.logs.findIndex(l => l.id === id && l.userId === req.user.id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Log not found' });
+  }
+  db.data.logs.splice(index, 1);
+  await db.write();
+  res.json({ message: 'Deleted' });
+});
+
 app.get('/api/summary', authMiddleware, async (req, res) => {
   const from = parseInt(req.query.from) || 0;
   const to = parseInt(req.query.to) || Date.now();

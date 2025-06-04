@@ -58,7 +58,20 @@
         grouped[chore].forEach(l => {
           const il = document.createElement('li');
           const date = new Date(l.ts).toLocaleString();
-          il.textContent = `${date}: ${l.user}`;
+          const span = document.createElement('span');
+          span.textContent = `${date}: ${l.user} `;
+          il.appendChild(span);
+          const btn = document.createElement('button');
+          btn.textContent = 'Remove';
+          btn.className = 'ml-1 text-red-600 underline';
+          btn.addEventListener('click', async () => {
+            await fetch(`/api/logs/${l.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            loadAllLogs();
+          });
+          il.appendChild(btn);
           inner.appendChild(il);
         });
         li.appendChild(inner);
