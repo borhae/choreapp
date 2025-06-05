@@ -131,7 +131,7 @@
           const ts = new Date(l.ts);
           if (ts < start || ts >= end) return;
           const grp = l.group || 'Ungrouped';
-          groups[grp] ||= new Set();
+          if (!groups[grp]) groups[grp] = new Set();
           groups[grp].add(l.chore);
           const day = ts.toLocaleDateString('en-US', { weekday: 'long' });
           const key = l.chore + '|' + day;

@@ -33,7 +33,9 @@ const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [] });
 
 async function initDB() {
   await db.read();
-  db.data ||= { users: [], chores: [], logs: [], groups: [] };
+  if (!db.data) {
+    db.data = { users: [], chores: [], logs: [], groups: [] };
+  }
   await db.write();
 }
 initDB();
@@ -193,7 +195,7 @@ app.get('/api/summary', authMiddleware, async (req, res) => {
   const filtered = db.data.logs.filter(l => l.ts >= from && l.ts <= to);
   const counts = {};
   for (const log of filtered) {
-    counts[log.userId] ||= 0;
+    if (!counts[log.userId]) counts[log.userId] = 0;
     counts[log.userId]++;
   }
   res.json(counts);
