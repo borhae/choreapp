@@ -206,6 +206,28 @@ app.get('/api/summary', authMiddleware, async (req, res) => {
   res.json(counts);
 });
 
+app.get('/api/chores/top', authMiddleware, async (req, res) => {
+  await db.read();
+  const counts = {};
+  for (const log of db.data.logs) {
+    counts[log.choreId] = (counts[log.choreId] || 0) + 1;
+  }
+  const choresWithCounts = db.data.chores.map(c => ({
+    ...c,
+    count: counts[c.id] || 0
+  }));
+  choresWithCounts.sort((a, b) => b.count - a.count);
+  const top = choresWithCounts.slice(0, 10).map(c => {
+    const group = c.groupId ? db.data.groups.find(g => g.id === c.groupId) : null;
+    return {
+      id: c.id,
+      name: c.name,
+      group: group ? group.name : ''
+    };
+  });
+  res.json(top);
+});
+
 app.use(express.static(path.join(__dirname, '../client')));
 
 const PORT = process.env.PORT || 3000;
