@@ -50,41 +50,51 @@
       const logs = await res.json();
       const grouped = {};
       logs.forEach(l => {
-        if (!grouped[l.chore]) {
-          grouped[l.chore] = [];
-        }
-        grouped[l.chore].push(l);
+        const grp = l.group || 'Ungrouped';
+        if (!grouped[grp]) grouped[grp] = {};
+        if (!grouped[grp][l.chore]) grouped[grp][l.chore] = [];
+        grouped[grp][l.chore].push(l);
       });
       const list = document.getElementById('all-logs');
       list.innerHTML = '';
-      Object.keys(grouped).forEach(chore => {
-        const li = document.createElement('li');
-        li.className = 'mb-2';
-        const title = document.createElement('strong');
-        title.textContent = chore;
-        li.appendChild(title);
-        const inner = document.createElement('ul');
-        inner.className = 'list-disc pl-4';
-        grouped[chore].forEach(l => {
-          const il = document.createElement('li');
-          const date = new Date(l.ts).toLocaleString();
-          il.textContent = `${date}: ${l.user}`;
-          if (l.user === username) {
-            il.className = 'cursor-pointer hover:line-through';
-            il.addEventListener('click', async () => {
-              await fetch(`/api/logs/${l.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
+      Object.keys(grouped).forEach(grp => {
+        const gLi = document.createElement('li');
+        gLi.className = 'mb-2';
+        const gTitle = document.createElement('strong');
+        gTitle.textContent = grp;
+        gLi.appendChild(gTitle);
+        const chList = document.createElement('ul');
+        chList.className = 'pl-4';
+        Object.keys(grouped[grp]).forEach(chore => {
+          const li = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = chore;
+          li.appendChild(title);
+          const inner = document.createElement('ul');
+          inner.className = 'list-disc pl-4';
+          grouped[grp][chore].forEach(l => {
+            const il = document.createElement('li');
+            const date = new Date(l.ts).toLocaleString();
+            il.textContent = `${date}: ${l.user}`;
+            if (l.user === username) {
+              il.className = 'cursor-pointer hover:line-through';
+              il.addEventListener('click', async () => {
+                await fetch(`/api/logs/${l.id}`, {
+                  method: 'DELETE',
+                  headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadAllLogs();
               });
-              loadAllLogs();
-            });
-          } else {
-            il.className = 'text-gray-500';
-          }
-          inner.appendChild(il);
+            } else {
+              il.className = 'text-gray-500';
+            }
+            inner.appendChild(il);
+          });
+          li.appendChild(inner);
+          chList.appendChild(li);
         });
-        li.appendChild(inner);
-        list.appendChild(li);
+        gLi.appendChild(chList);
+        list.appendChild(gLi);
       });
     }
   </script>

@@ -78,9 +78,11 @@
 
     function ChoreTracker({ token, onLogout }) {
       const [newChore, setNewChore] = useState('');
+      const [newGroup, setNewGroup] = useState('');
       const [chores, setChores] = useState([]);
       const [assignments, setAssignments] = useState([]);
       const [suggestions, setSuggestions] = useState([]);
+      const [groupSuggestions, setGroupSuggestions] = useState([]);
       const [weekOffset, setWeekOffset] = useState(0);
       const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
       const [selectedDay, setSelectedDay] = useState('');
@@ -123,12 +125,14 @@
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
         const end = new Date(start);
         end.setDate(start.getDate() + 7);
-        const chSet = new Set();
+        const groups = {};
         const map = {};
         logs.forEach(l => {
           const ts = new Date(l.ts);
           if (ts < start || ts >= end) return;
-          chSet.add(l.chore);
+          const grp = l.group || 'Ungrouped';
+          groups[grp] ||= new Set();
+          groups[grp].add(l.chore);
           const day = ts.toLocaleDateString('en-US', { weekday: 'long' });
           const key = l.chore + '|' + day;
           if (!map[key]) {
@@ -139,7 +143,7 @@
             map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
           }
         });
-        setChores(Array.from(chSet));
+        setChores(Object.entries(groups).map(([g, set]) => ({ group: g, chores: Array.from(set) })));
         setAssignments(Object.values(map));
       }
 
@@ -159,9 +163,10 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ name: newChore.trim(), ts: tsDate.getTime() })
+          body: JSON.stringify({ name: newChore.trim(), ts: tsDate.getTime(), group: newGroup.trim() })
         });
         setNewChore('');
+        setNewGroup('');
         setSelectedDay('');
         loadData();
       }
@@ -180,6 +185,13 @@
           headers: { 'Authorization': 'Bearer ' + token }
         }).then(r => r.json()).then(setSuggestions);
       }, [newChore]);
+
+      useEffect(() => {
+        if (!newGroup.trim()) { setGroupSuggestions([]); return; }
+        fetch('/api/groups/autocomplete?q=' + encodeURIComponent(newGroup.trim()), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        }).then(r => r.json()).then(setGroupSuggestions);
+      }, [newGroup]);
 
       const getUsersForChoreAndDay = (chore, day) => {
         const a = assignments.find(x => x.choreId === chore && x.day === day);
@@ -207,6 +219,17 @@
               />
               <datalist id="chore-suggestions">
                 {suggestions.map(name => <option key={name} value={name} />)}
+              </datalist>
+              <input
+                list="group-suggestions"
+                className="border p-2 rounded"
+                placeholder="Group"
+                value={newGroup}
+                onChange={e => setNewGroup(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addChore()}
+              />
+              <datalist id="group-suggestions">
+                {groupSuggestions.map(name => <option key={name} value={name} />)}
               </datalist>
               <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addChore}>Add</button>
               <a href="all.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">All Logs</a>
@@ -237,30 +260,35 @@
                   {day}
                 </div>
               ))}
-              {chores.map(chore => (
-                <div key={chore} className="contents">
-                  <div className="font-medium p-3 border-r bg-pantone564/20 flex items-center text-pantone564">{chore}</div>
-                  {weekdays.map(day => (
-                    <div key={chore + '-' + day} className="p-2 border min-h-[80px]">
-                      <div className="flex flex-wrap gap-1">
-                        {getUsersForChoreAndDay(chore, day).map(entry => (
-                          <span
-                            key={entry.id}
-                            onClick={() => entry.own && deleteLog(entry.id)}
-                            className={
-                              (entry.own
-                                ? 'cursor-pointer bg-pantone564 text-white hover:line-through'
-                                : 'bg-gray-300 text-gray-600') +
-                              ' text-xs px-1 rounded'
-                            }
-                          >
-                            {entry.user}
-                          </span>
-                        ))}
-                      </div>
+              {chores.map(group => (
+                <React.Fragment key={group.group}>
+                  <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{group.group}</div>
+                  {group.chores.map(chore => (
+                    <div key={group.group + '-' + chore} className="contents">
+                      <div className="font-medium p-3 border-r bg-pantone564/20 flex items-center text-pantone564">{chore}</div>
+                      {weekdays.map(day => (
+                        <div key={chore + '-' + day} className="p-2 border min-h-[80px]">
+                          <div className="flex flex-wrap gap-1">
+                            {getUsersForChoreAndDay(chore, day).map(entry => (
+                              <span
+                                key={entry.id}
+                                onClick={() => entry.own && deleteLog(entry.id)}
+                                className={
+                                  (entry.own
+                                    ? 'cursor-pointer bg-pantone564 text-white hover:line-through'
+                                    : 'bg-gray-300 text-gray-600') +
+                                  ' text-xs px-1 rounded'
+                                }
+                              >
+                                {entry.user}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
-                </div>
+                </React.Fragment>
               ))}
             </div>
           </div>
