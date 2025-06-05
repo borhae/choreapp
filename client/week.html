@@ -82,17 +82,19 @@
         d.setDate(start.getDate() + i);
         days.push(d);
       }
-      const chores = {};
+      const groups = {};
       logs.forEach(l => {
         const ts = new Date(l.ts);
         const dayIndex = Math.floor((ts - start) / 86400000);
         if (dayIndex < 0 || dayIndex > 6) return;
-        if (!chores[l.chore]) {
-          chores[l.chore] = Array.from({length:7}, () => []);
+        const grp = l.group || 'Ungrouped';
+        if (!groups[grp]) groups[grp] = {};
+        if (!groups[grp][l.chore]) {
+          groups[grp][l.chore] = Array.from({length:7}, () => []);
         }
         const abbrev = l.user.slice(0,3);
-        if (!chores[l.chore][dayIndex].includes(abbrev)) {
-          chores[l.chore][dayIndex].push(abbrev);
+        if (!groups[grp][l.chore][dayIndex].includes(abbrev)) {
+          groups[grp][l.chore][dayIndex].push(abbrev);
         }
       });
       const table = document.createElement('table');
@@ -108,19 +110,28 @@
         head.appendChild(th);
       });
       table.appendChild(head);
-      Object.keys(chores).sort().forEach(ch => {
-        const tr = document.createElement('tr');
-        const tdTitle = document.createElement('td');
-        tdTitle.textContent = ch;
-        tdTitle.className = 'border px-1 font-semibold bg-gray-50';
-        tr.appendChild(tdTitle);
-        for (let i=0;i<7;i++) {
-          const td = document.createElement('td');
-          td.textContent = chores[ch][i].join(' ');
-          td.className = 'border px-1';
-          tr.appendChild(td);
-        }
-        table.appendChild(tr);
+      Object.keys(groups).forEach(grp => {
+        const hr = document.createElement('tr');
+        const ht = document.createElement('th');
+        ht.textContent = grp;
+        ht.colSpan = 8;
+        ht.className = 'border bg-p604/50 px-1 text-left';
+        hr.appendChild(ht);
+        table.appendChild(hr);
+        Object.keys(groups[grp]).sort().forEach(ch => {
+          const tr = document.createElement('tr');
+          const tdTitle = document.createElement('td');
+          tdTitle.textContent = ch;
+          tdTitle.className = 'border px-1 font-semibold bg-gray-50';
+          tr.appendChild(tdTitle);
+          for (let i=0;i<7;i++) {
+            const td = document.createElement('td');
+            td.textContent = groups[grp][ch][i].join(' ');
+            td.className = 'border px-1';
+            tr.appendChild(td);
+          }
+          table.appendChild(tr);
+        });
       });
       document.getElementById('content').innerHTML = '';
       document.getElementById('content').appendChild(table);

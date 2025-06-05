@@ -12,6 +12,11 @@ There is also a **Week overview** page showing the current week's chores. It
 lists chores in rows with days of the week as columns and displays the first
 three letters of each user's name when they completed a chore on that day.
 
+Chores can be organized into **groups**. When adding a chore you may specify a
+group name. Groups are created automatically and inputs provide autocomplete
+suggestions. Weekly overviews and log pages now group chores under their group
+heading.
+
 All open pages stay in sync thanks to a WebSocket connection. When a chore is
 added or removed in one browser, other connected clients update instantly.
 
