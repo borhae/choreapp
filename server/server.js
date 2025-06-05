@@ -35,6 +35,11 @@ async function initDB() {
   await db.read();
   if (!db.data) {
     db.data = { users: [], chores: [], logs: [], groups: [] };
+  } else {
+    if (!Array.isArray(db.data.users)) db.data.users = [];
+    if (!Array.isArray(db.data.chores)) db.data.chores = [];
+    if (!Array.isArray(db.data.logs)) db.data.logs = [];
+    if (!Array.isArray(db.data.groups)) db.data.groups = [];
   }
   await db.write();
 }
