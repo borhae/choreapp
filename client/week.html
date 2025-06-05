@@ -67,8 +67,12 @@
     document.getElementById('next-week').addEventListener('click', () => { weekOffset++; loadWeek(); });
 
     async function loadWeek() {
-      const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
-      const logs = await res.json();
+      const [logsRes, topRes] = await Promise.all([
+        fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/chores/top', { headers: { 'Authorization': 'Bearer ' + token } })
+      ]);
+      const logs = await logsRes.json();
+      const top = await topRes.json();
       const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
       const weekNum = isoWeekNumber(start);
       const end = new Date(start);
@@ -94,6 +98,13 @@
         }
         const abbrev = l.user.slice(0,3);
         groups[grp][l.chore][dayIndex].push(abbrev);
+      });
+      top.forEach(ch => {
+        const grp = ch.group || 'Ungrouped';
+        if (!groups[grp]) groups[grp] = {};
+        if (!groups[grp][ch.name]) {
+          groups[grp][ch.name] = Array.from({length:7}, () => []);
+        }
       });
       const table = document.createElement('table');
       table.className = 'border-collapse w-full text-sm';

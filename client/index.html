@@ -121,8 +121,12 @@
       useEffect(() => { loadData(); }, [weekOffset]);
 
       async function loadData() {
-        const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
-        const logs = await res.json();
+        const [logsRes, topRes] = await Promise.all([
+          fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/chores/top', { headers: { 'Authorization': 'Bearer ' + token } })
+        ]);
+        const logs = await logsRes.json();
+        const top = await topRes.json();
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
         const end = new Date(start);
         end.setDate(start.getDate() + 7);
@@ -141,6 +145,11 @@
           }
           const abbrev = l.user.slice(0,3);
           map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
+        });
+        top.forEach(ch => {
+          const grp = ch.group || 'Ungrouped';
+          if (!groups[grp]) groups[grp] = new Set();
+          groups[grp].add(ch.name);
         });
         setChores(Object.entries(groups).map(([g, set]) => ({ group: g, chores: Array.from(set) })));
         setAssignments(Object.values(map));
