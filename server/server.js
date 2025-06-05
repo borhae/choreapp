@@ -29,11 +29,11 @@ function broadcastUpdate() {
 
 const dbFile = process.env.DB_FILE || path.join(__dirname, 'db.json');
 const adapter = new JSONFile(dbFile);
-const db = new Low(adapter, { users: [], chores: [], logs: [] });
+const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [] });
 
 async function initDB() {
   await db.read();
-  db.data ||= { users: [], chores: [], logs: [] };
+  db.data ||= { users: [], chores: [], logs: [], groups: [] };
   await db.write();
 }
 initDB();
@@ -87,6 +87,26 @@ app.post('/api/login', async (req, res) => {
   res.json({ token });
 });
 
+app.get('/api/groups/autocomplete', authMiddleware, async (req, res) => {
+  const query = (req.query.q || '').toLowerCase();
+  await db.read();
+  const results = db.data.groups.filter(g => g.name.toLowerCase().startsWith(query));
+  res.json(results.map(g => g.name));
+});
+
+app.post('/api/groups', authMiddleware, async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Missing group name' });
+  await db.read();
+  let group = db.data.groups.find(g => g.name.toLowerCase() === name.toLowerCase());
+  if (!group) {
+    group = { id: uuidv4(), name };
+    db.data.groups.push(group);
+    await db.write();
+  }
+  res.json(group);
+});
+
 app.get('/api/chores/autocomplete', authMiddleware, async (req, res) => {
   const query = (req.query.q || '').toLowerCase();
   await db.read();
@@ -95,13 +115,24 @@ app.get('/api/chores/autocomplete', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/chores', authMiddleware, async (req, res) => {
-  const { name, ts } = req.body;
+  const { name, ts, group } = req.body;
   if (!name) return res.status(400).json({ error: 'Missing chore name' });
   await db.read();
+  let groupId = null;
+  if (group) {
+    let g = db.data.groups.find(gr => gr.name.toLowerCase() === group.toLowerCase());
+    if (!g) {
+      g = { id: uuidv4(), name: group };
+      db.data.groups.push(g);
+    }
+    groupId = g.id;
+  }
   let chore = db.data.chores.find(c => c.name.toLowerCase() === name.toLowerCase());
   if (!chore) {
-    chore = { id: uuidv4(), name };
+    chore = { id: uuidv4(), name, groupId };
     db.data.chores.push(chore);
+  } else if (groupId && !chore.groupId) {
+    chore.groupId = groupId;
   }
   const timestamp = Number.isFinite(Number(ts)) ? Number(ts) : Date.now();
   const log = { id: uuidv4(), userId: req.user.id, choreId: chore.id, ts: timestamp };
@@ -116,7 +147,12 @@ app.get('/api/logs', authMiddleware, async (req, res) => {
   const userLogs = db.data.logs.filter(l => l.userId === req.user.id);
   const logsWithNames = userLogs.map(l => {
     const chore = db.data.chores.find(c => c.id === l.choreId);
-    return { ...l, chore: chore ? chore.name : 'unknown' };
+    const group = chore ? db.data.groups.find(g => g.id === chore.groupId) : null;
+    return {
+      ...l,
+      chore: chore ? chore.name : 'unknown',
+      group: group ? group.name : ''
+    };
   });
   res.json(logsWithNames);
 });
@@ -126,10 +162,12 @@ app.get('/api/logs/all', authMiddleware, async (req, res) => {
   const logs = db.data.logs.map(l => {
     const user = db.data.users.find(u => u.id === l.userId);
     const chore = db.data.chores.find(c => c.id === l.choreId);
+    const group = chore ? db.data.groups.find(g => g.id === chore.groupId) : null;
     return {
       ...l,
       user: user ? user.username : 'unknown',
       chore: chore ? chore.name : 'unknown',
+      group: group ? group.name : ''
     };
   });
   res.json(logs);
