@@ -135,9 +135,9 @@
           if (!groups[grp]) groups[grp] = new Set();
           groups[grp].add(l.chore);
           const day = ts.toLocaleDateString('en-US', { weekday: 'long' });
-          const key = l.chore + '|' + day;
+          const key = grp + '|' + l.chore + '|' + day;
           if (!map[key]) {
-            map[key] = { choreId: l.chore, day, entries: [] };
+            map[key] = { choreId: l.chore, group: grp, day, entries: [] };
           }
           const abbrev = l.user.slice(0,3);
           map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
@@ -210,8 +210,8 @@
         }).then(r => r.json()).then(setGroupSuggestions);
       }, [newGroup]);
 
-      const getUsersForChoreAndDay = (chore, day) => {
-        const a = assignments.find(x => x.choreId === chore && x.day === day);
+      const getUsersForChoreAndDay = (chore, group, day) => {
+        const a = assignments.find(x => x.choreId === chore && x.group === group && x.day === day);
         return a ? a.entries : [];
       };
 
@@ -307,7 +307,7 @@
                       </div>
                       {weekdays.map(day => (
                         <div
-                          key={chore + '-' + day}
+                          key={group.group + '-' + chore + '-' + day}
                           className="p-2 border min-h-[80px] cursor-pointer"
                           onClick={() => {
                             if (selectedDay && !selectedChore.name) {
@@ -318,7 +318,7 @@
                           }}
                         >
                           <div className="flex flex-wrap gap-1">
-                            {getUsersForChoreAndDay(chore, day).map(entry => (
+                            {getUsersForChoreAndDay(chore, group.group, day).map(entry => (
                               <span
                                 key={entry.id}
                                 onClick={() => entry.own && deleteLog(entry.id)}
