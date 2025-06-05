@@ -86,6 +86,7 @@
       const [weekOffset, setWeekOffset] = useState(0);
       const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
       const [selectedDay, setSelectedDay] = useState('');
+      const [selectedChore, setSelectedChore] = useState({ name: '', group: '' });
       const username = JSON.parse(atob(token.split('.')[1])).username;
 
       useEffect(() => {
@@ -169,6 +170,24 @@
         loadData();
       }
 
+      async function quickAdd(choreName, groupName, day) {
+        const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
+        const dayIndex = weekdays.indexOf(day);
+        const tsDate = new Date(start);
+        tsDate.setDate(start.getDate() + (dayIndex === -1 ? 0 : dayIndex));
+        await fetch('/api/chores', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ name: choreName, ts: tsDate.getTime(), group: groupName })
+        });
+        setSelectedDay('');
+        setSelectedChore({ name: '', group: '' });
+        loadData();
+      }
+
       async function deleteLog(id) {
         await fetch(`/api/logs/${id}`, {
           method: 'DELETE',
@@ -247,7 +266,13 @@
               {weekdays.map(day => (
                 <div
                   key={day}
-                  onClick={() => setSelectedDay(day)}
+                  onClick={() => {
+                    if (selectedChore.name) {
+                      quickAdd(selectedChore.name, selectedChore.group, day);
+                    } else {
+                      setSelectedDay(day);
+                    }
+                  }}
                   className={
                     "font-semibold p-3 text-center border-b cursor-pointer " +
                     (selectedDay === day
@@ -263,9 +288,35 @@
                   <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{group.group}</div>
                   {group.chores.map(chore => (
                     <div key={group.group + '-' + chore} className="contents">
-                      <div className="font-medium p-3 border-r bg-pantone564/20 flex items-center text-pantone564">{chore}</div>
+                      <div
+                        className={
+                          "font-medium p-3 border-r flex items-center cursor-pointer " +
+                          (selectedChore.name === chore && selectedChore.group === group.group
+                            ? 'bg-pantone564 text-white'
+                            : 'bg-pantone564/20 text-pantone564')
+                        }
+                        onClick={() => {
+                          if (selectedDay) {
+                            quickAdd(chore, group.group, selectedDay);
+                          } else {
+                            setSelectedChore({ name: chore, group: group.group });
+                          }
+                        }}
+                      >
+                        {chore}
+                      </div>
                       {weekdays.map(day => (
-                        <div key={chore + '-' + day} className="p-2 border min-h-[80px]">
+                        <div
+                          key={chore + '-' + day}
+                          className="p-2 border min-h-[80px] cursor-pointer"
+                          onClick={() => {
+                            if (selectedDay && !selectedChore.name) {
+                              quickAdd(chore, group.group, selectedDay);
+                            } else if (selectedChore.name && !selectedDay) {
+                              quickAdd(selectedChore.name, selectedChore.group, day);
+                            }
+                          }}
+                        >
                           <div className="flex flex-wrap gap-1">
                             {getUsersForChoreAndDay(chore, day).map(entry => (
                               <span
