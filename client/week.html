@@ -93,9 +93,7 @@
           groups[grp][l.chore] = Array.from({length:7}, () => []);
         }
         const abbrev = l.user.slice(0,3);
-        if (!groups[grp][l.chore][dayIndex].includes(abbrev)) {
-          groups[grp][l.chore][dayIndex].push(abbrev);
-        }
+        groups[grp][l.chore][dayIndex].push(abbrev);
       });
       const table = document.createElement('table');
       table.className = 'border-collapse w-full text-sm';

@@ -139,9 +139,7 @@
             map[key] = { choreId: l.chore, day, entries: [] };
           }
           const abbrev = l.user.slice(0,3);
-          if (!map[key].entries.find(e => e.user === abbrev)) {
-            map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
-          }
+          map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
         });
         setChores(Object.entries(groups).map(([g, set]) => ({ group: g, chores: Array.from(set) })));
         setAssignments(Object.values(map));
