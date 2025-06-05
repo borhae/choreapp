@@ -134,12 +134,12 @@ app.post('/api/chores', authMiddleware, async (req, res) => {
     }
     groupId = g.id;
   }
-  let chore = db.data.chores.find(c => c.name.toLowerCase() === name.toLowerCase());
+  let chore = db.data.chores.find(
+    c => c.name.toLowerCase() === name.toLowerCase() && c.groupId === groupId
+  );
   if (!chore) {
     chore = { id: uuidv4(), name, groupId };
     db.data.chores.push(chore);
-  } else if (groupId && !chore.groupId) {
-    chore.groupId = groupId;
   }
   const timestamp = Number.isFinite(Number(ts)) ? Number(ts) : Date.now();
   const log = { id: uuidv4(), userId: req.user.id, choreId: chore.id, ts: timestamp };
