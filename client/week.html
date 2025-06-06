@@ -110,12 +110,12 @@
       table.className = 'border-collapse w-full text-sm';
       const head = document.createElement('tr');
       const empty = document.createElement('th');
-      empty.className = 'border bg-p604 px-1';
+      empty.className = 'border bg-p604 px-1 sticky top-0 z-10';
       head.appendChild(empty);
       days.forEach(d => {
         const th = document.createElement('th');
         th.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
-        th.className = 'border bg-p604 px-1';
+        th.className = 'border bg-p604 px-1 sticky top-0 z-10';
         head.appendChild(th);
       });
       table.appendChild(head);
