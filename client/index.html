@@ -84,7 +84,7 @@
       const [suggestions, setSuggestions] = useState([]);
       const [groupSuggestions, setGroupSuggestions] = useState([]);
       const [weekOffset, setWeekOffset] = useState(0);
-      const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
       const [selectedDay, setSelectedDay] = useState('');
       const [selectedChore, setSelectedChore] = useState({ name: '', group: '' });
       const username = JSON.parse(atob(token.split('.')[1])).username;
@@ -138,7 +138,7 @@
           const grp = l.group || 'Ungrouped';
           if (!groups[grp]) groups[grp] = new Set();
           groups[grp].add(l.chore);
-          const day = ts.toLocaleDateString('en-US', { weekday: 'long' });
+          const day = ts.toLocaleDateString('en-US', { weekday: 'short' });
           const key = grp + '|' + l.chore + '|' + day;
           if (!map[key]) {
             map[key] = { choreId: l.chore, group: grp, day, entries: [] };
