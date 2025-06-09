@@ -8,16 +8,9 @@ also choose the weekday before adding a chore so it is logged for that day.
 
 You can log out at any time using the **Logout** button in the app.
 
-There is also a **Week overview** page showing the current week's chores. It
-lists chores in rows with days of the week as columns and displays the first
-three letters of each user's name when they completed a chore on that day. The
-day headers are abbreviated to three letters for a more compact layout on
-mobile screens.
-
 Chores can be organized into **groups**. When adding a chore you may specify a
 group name. Groups are created automatically and inputs provide autocomplete
-suggestions. Weekly overviews and log pages now group chores under their group
-heading.
+suggestions. Log pages group chores under their group heading.
 
 All open pages stay in sync thanks to a WebSocket connection. When a chore is
 added or removed in one browser, other connected clients update instantly.
