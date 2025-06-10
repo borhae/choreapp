@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chore Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -27,31 +27,35 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    function Auth({ onLogin }) {
+    async function api(path, opts = {}, token) {
+      const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(path, { ...opts, headers });
+      return res.json();
+    }
+
+    function Login({ onToken }) {
       const [regUser, setRegUser] = useState('');
       const [regPass, setRegPass] = useState('');
-      const [logUser, setLogUser] = useState('');
-      const [logPass, setLogPass] = useState('');
+      const [user, setUser] = useState('');
+      const [pass, setPass] = useState('');
 
       async function register() {
-        await fetch('/api/register', {
+        await api('/api/register', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: regUser, password: regPass })
         });
-        alert('Registered! Please login.');
+        alert('Registered! Please log in.');
       }
 
       async function login() {
-        const res = await fetch('/api/login', {
+        const data = await api('/api/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: logUser, password: logPass })
+          body: JSON.stringify({ username: user, password: pass })
         });
-        const data = await res.json();
         if (data.token) {
           localStorage.setItem('token', data.token);
-          onLogin(data.token);
+          onToken(data.token);
         } else {
           alert('Login failed');
         }
@@ -62,32 +66,34 @@
           <h1 className="text-2xl font-bold text-center text-pantone564">Chore Tracker</h1>
           <div>
             <h2 className="font-semibold mb-2">Register</h2>
-            <input value={regUser} onChange={e => setRegUser(e.target.value)} placeholder="Username" className="border p-2 w-full rounded" />
-            <input type="password" value={regPass} onChange={e => setRegPass(e.target.value)} placeholder="Password" className="border p-2 w-full rounded mt-2" />
-            <button onClick={register} className="bg-pantone564 text-white rounded p-2 w-full mt-2">Register</button>
+            <input className="border p-2 w-full rounded" placeholder="Username" value={regUser} onChange={e => setRegUser(e.target.value)} />
+            <input type="password" className="border p-2 w-full rounded mt-2" placeholder="Password" value={regPass} onChange={e => setRegPass(e.target.value)} />
+            <button className="bg-pantone564 text-white rounded p-2 w-full mt-2" onClick={register}>Register</button>
           </div>
           <div>
             <h2 className="font-semibold mb-2">Login</h2>
-            <input value={logUser} onChange={e => setLogUser(e.target.value)} placeholder="Username" className="border p-2 w-full rounded" />
-            <input type="password" value={logPass} onChange={e => setLogPass(e.target.value)} placeholder="Password" className="border p-2 w-full rounded mt-2" />
-            <button onClick={login} className="bg-pantone564 text-white rounded p-2 w-full mt-2">Login</button>
+            <input className="border p-2 w-full rounded" placeholder="Username" value={user} onChange={e => setUser(e.target.value)} />
+            <input type="password" className="border p-2 w-full rounded mt-2" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} />
+            <button className="bg-pantone564 text-white rounded p-2 w-full mt-2" onClick={login}>Login</button>
           </div>
         </div>
       );
     }
 
-    function ChoreTracker({ token, onLogout }) {
-      const [newChore, setNewChore] = useState('');
-      const [newGroup, setNewGroup] = useState('');
+    function Tracker({ token, onLogout }) {
+      const [chore, setChore] = useState('');
+      const [group, setGroup] = useState('');
       const [chores, setChores] = useState([]);
       const [assignments, setAssignments] = useState([]);
       const [suggestions, setSuggestions] = useState([]);
       const [groupSuggestions, setGroupSuggestions] = useState([]);
       const [weekOffset, setWeekOffset] = useState(0);
-      const weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
       const [selectedDay, setSelectedDay] = useState('');
       const [selectedChore, setSelectedChore] = useState({ name: '', group: '' });
+      const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
       const username = JSON.parse(atob(token.split('.')[1])).username;
+
+      useEffect(() => { loadData(); }, [weekOffset]);
 
       useEffect(() => {
         const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -96,40 +102,34 @@
           try {
             const msg = JSON.parse(evt.data);
             if (msg.type === 'update') loadData();
-          } catch (err) {}
+          } catch {}
         };
         return () => ws.close();
       }, []);
 
-      function startOfWeek(date) {
-        const d = new Date(date);
-        const day = d.getDay();
-        const diff = (day + 6) % 7;
-        d.setHours(0,0,0,0);
-        d.setDate(d.getDate() - diff);
-        return d;
+      function startOfWeek(d) {
+        const date = new Date(d);
+        const day = (date.getDay() + 6) % 7;
+        date.setHours(0,0,0,0);
+        date.setDate(date.getDate() - day);
+        return date;
       }
 
-      function isoWeekNumber(date) {
-        const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-        const week1 = new Date(d.getFullYear(), 0, 4);
-        return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+      function isoWeek(d) {
+        const date = new Date(d);
+        date.setHours(0,0,0,0);
+        date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+        const week1 = new Date(date.getFullYear(),0,4);
+        return 1 + Math.round(((date - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
       }
-
-      useEffect(() => { loadData(); }, [weekOffset]);
 
       async function loadData() {
-        const [logsRes, topRes] = await Promise.all([
-          fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } }),
-          fetch('/api/chores/top', { headers: { 'Authorization': 'Bearer ' + token } })
+        const [logs, top] = await Promise.all([
+          api('/api/logs/all', {}, token),
+          api('/api/chores/top', {}, token)
         ]);
-        const logs = await logsRes.json();
-        const top = await topRes.json();
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
-        const end = new Date(start);
-        end.setDate(start.getDate() + 7);
+        const end = new Date(start); end.setDate(start.getDate() + 7);
         const groups = {};
         const map = {};
         logs.forEach(l => {
@@ -140,128 +140,87 @@
           groups[grp].add(l.chore);
           const day = ts.toLocaleDateString('en-US', { weekday: 'short' });
           const key = grp + '|' + l.chore + '|' + day;
-          if (!map[key]) {
-            map[key] = { choreId: l.chore, group: grp, day, entries: [] };
-          }
-          const abbrev = l.user.slice(0,3);
-          map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
+          if (!map[key]) map[key] = { choreId: l.chore, group: grp, day, entries: [] };
+          map[key].entries.push({ user: l.user.slice(0,3), id: l.id, own: l.user === username });
         });
         top.forEach(ch => {
           const grp = ch.group || 'Ungrouped';
           if (!groups[grp]) groups[grp] = new Set();
           groups[grp].add(ch.name);
         });
-        setChores(Object.entries(groups).map(([g, set]) => ({ group: g, chores: Array.from(set) })));
+        setChores(Object.entries(groups).map(([g,s]) => ({ group: g, chores: Array.from(s) })));
         setAssignments(Object.values(map));
       }
 
-      async function addChore() {
-        if (!newChore.trim()) return;
+      async function addChore(tsDay) {
+        if (!chore.trim()) return;
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
-        let dayIndex = weekdays.indexOf(selectedDay);
-        if (dayIndex === -1) {
-          const todayIndex = (new Date().getDay() + 6) % 7; // make Monday=0
-          dayIndex = todayIndex;
-        }
-        const tsDate = new Date(start);
-        tsDate.setDate(start.getDate() + dayIndex);
-        await fetch('/api/chores', {
+        const idx = days.indexOf(tsDay || selectedDay);
+        const date = new Date(start);
+        date.setDate(start.getDate() + (idx === -1 ? 0 : idx));
+        await api('/api/chores', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({ name: newChore.trim(), ts: tsDate.getTime(), group: newGroup.trim() })
-        });
-        setNewChore('');
-        setNewGroup('');
+          body: JSON.stringify({ name: chore.trim(), ts: date.getTime(), group: group.trim() })
+        }, token);
+        setChore('');
+        setGroup('');
         setSelectedDay('');
+        setSelectedChore({ name: '', group: '' });
         loadData();
       }
 
-      async function quickAdd(choreName, groupName, day) {
+      async function quickAdd(name, grp, day) {
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
-        const dayIndex = weekdays.indexOf(day);
-        const tsDate = new Date(start);
-        tsDate.setDate(start.getDate() + (dayIndex === -1 ? 0 : dayIndex));
-        await fetch('/api/chores', {
+        const idx = days.indexOf(day);
+        const date = new Date(start); date.setDate(start.getDate() + (idx === -1 ? 0 : idx));
+        await api('/api/chores', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({ name: choreName, ts: tsDate.getTime(), group: groupName })
-        });
+          body: JSON.stringify({ name, group: grp, ts: date.getTime() })
+        }, token);
         setSelectedDay('');
         setSelectedChore({ name: '', group: '' });
         loadData();
       }
 
       async function deleteLog(id) {
-        await fetch(`/api/logs/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
+        await api(`/api/logs/${id}`, { method: 'DELETE' }, token);
         loadData();
       }
 
       useEffect(() => {
-        if (!newChore.trim()) { setSuggestions([]); return; }
-        fetch('/api/chores/autocomplete?q=' + encodeURIComponent(newChore.trim()), {
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).then(r => r.json()).then(setSuggestions);
-      }, [newChore]);
+        if (!chore.trim()) { setSuggestions([]); return; }
+        api('/api/chores/autocomplete?q=' + encodeURIComponent(chore.trim()), {}, token).then(setSuggestions);
+      }, [chore]);
 
       useEffect(() => {
-        if (!newGroup.trim()) { setGroupSuggestions([]); return; }
-        fetch('/api/groups/autocomplete?q=' + encodeURIComponent(newGroup.trim()), {
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).then(r => r.json()).then(setGroupSuggestions);
-      }, [newGroup]);
+        if (!group.trim()) { setGroupSuggestions([]); return; }
+        api('/api/groups/autocomplete?q=' + encodeURIComponent(group.trim()), {}, token).then(setGroupSuggestions);
+      }, [group]);
 
-      const getUsersForChoreAndDay = (chore, group, day) => {
-        const a = assignments.find(x => x.choreId === chore && x.group === group && x.day === day);
+      const getUsers = (c, g, d) => {
+        const a = assignments.find(x => x.choreId === c && x.group === g && x.day === d);
         return a ? a.entries : [];
       };
 
       const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
-      const weekNum = isoWeekNumber(start);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      const weekLabel = `Week ${weekNum} (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`;
+      const weekNum = isoWeek(start);
+      const endWeek = new Date(start); endWeek.setDate(start.getDate() + 6);
+      const weekLabel = `Week ${weekNum} (${start.toLocaleDateString()} - ${endWeek.toLocaleDateString()})`;
 
       return (
         <div className="p-6 max-w-7xl mx-auto">
-          <div className="mb-6 bg-white rounded shadow p-4">
+          <header className="sticky top-0 z-20 bg-white rounded shadow p-4 mb-6">
             <h2 className="text-lg font-bold text-pantone564 mb-3">Chore Tracker</h2>
             <div className="flex gap-2 flex-wrap items-center">
-              <input
-                list="chore-suggestions"
-                className="flex-1 border p-2 rounded"
-                placeholder="Enter chore name..."
-                value={newChore}
-                onChange={e => setNewChore(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addChore()}
-              />
-              <datalist id="chore-suggestions">
-                {suggestions.map(name => <option key={name} value={name} />)}
-              </datalist>
-              <input
-                list="group-suggestions"
-                className="border p-2 rounded"
-                placeholder="Group"
-                value={newGroup}
-                onChange={e => setNewGroup(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addChore()}
-              />
-              <datalist id="group-suggestions">
-                {groupSuggestions.map(name => <option key={name} value={name} />)}
-              </datalist>
-              <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addChore}>Add</button>
+              <input list="chore-suggest" className="flex-1 border p-2 rounded" placeholder="Enter chore" value={chore} onChange={e => setChore(e.target.value)} onKeyDown={e => e.key === 'Enter' && addChore()} />
+              <datalist id="chore-suggest">{suggestions.map(s => <option key={s} value={s} />)}</datalist>
+              <input list="group-suggest" className="border p-2 rounded" placeholder="Group" value={group} onChange={e => setGroup(e.target.value)} onKeyDown={e => e.key === 'Enter' && addChore()} />
+              <datalist id="group-suggest">{groupSuggestions.map(s => <option key={s} value={s} />)}</datalist>
+              <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={() => addChore()}>Add</button>
               <a href="all.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">All Logs</a>
               <button className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded" onClick={onLogout}>Logout</button>
             </div>
-          </div>
+          </header>
 
           <div className="bg-white rounded shadow p-4 overflow-x-auto relative">
             <h3 className="text-lg font-bold text-pantone564 mb-3">Weekly Overview</h3>
@@ -272,74 +231,20 @@
             </div>
             <div className="grid grid-cols-8 gap-2 min-w-[800px]">
               <div className="font-semibold p-3 text-center sticky top-0 bg-white z-10">Chores</div>
-              {weekdays.map(day => (
-                <div
-                  key={day}
-                  onClick={() => {
-                    if (selectedChore.name) {
-                      quickAdd(selectedChore.name, selectedChore.group, day);
-                    } else {
-                      setSelectedDay(day);
-                    }
-                  }}
-                  className={
-                    "font-semibold p-3 text-center border-b cursor-pointer sticky top-0 z-10 " +
-                    (selectedDay === day
-                      ? "bg-pantone604 text-pantone564"
-                      : "bg-pantone604/30 text-pantone564")
-                  }
-                >
-                  {day}
-                </div>
+              {days.map(d => (
+                <div key={d} onClick={() => selectedChore.name ? quickAdd(selectedChore.name, selectedChore.group, d) : setSelectedDay(d)} className={"font-semibold p-3 text-center border-b cursor-pointer sticky top-0 z-10 " + (selectedDay === d ? 'bg-pantone604 text-pantone564' : 'bg-pantone604/30 text-pantone564')}>{d}</div>
               ))}
-              {chores.map(group => (
-                <React.Fragment key={group.group}>
-                  <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{group.group}</div>
-                  {group.chores.map(chore => (
-                    <div key={group.group + '-' + chore} className="contents">
-                      <div
-                        className={
-                          "font-medium p-3 border-r flex items-center cursor-pointer " +
-                          (selectedChore.name === chore && selectedChore.group === group.group
-                            ? 'bg-pantone564 text-white'
-                            : 'bg-pantone564/20 text-pantone564')
-                        }
-                        onClick={() => {
-                          if (selectedDay) {
-                            quickAdd(chore, group.group, selectedDay);
-                          } else {
-                            setSelectedChore({ name: chore, group: group.group });
-                          }
-                        }}
-                      >
-                        {chore}
-                      </div>
-                      {weekdays.map(day => (
-                        <div
-                          key={group.group + '-' + chore + '-' + day}
-                          className="p-2 border min-h-[80px] cursor-pointer"
-                          onClick={() => {
-                            if (selectedDay && !selectedChore.name) {
-                              quickAdd(chore, group.group, selectedDay);
-                            } else if (selectedChore.name && !selectedDay) {
-                              quickAdd(selectedChore.name, selectedChore.group, day);
-                            }
-                          }}
-                        >
+              {chores.map(groupData => (
+                <React.Fragment key={groupData.group}>
+                  <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{groupData.group}</div>
+                  {groupData.chores.map(ch => (
+                    <div key={groupData.group + '-' + ch} className="contents">
+                      <div className={"font-medium p-3 border-r flex items-center cursor-pointer " + (selectedChore.name === ch && selectedChore.group === groupData.group ? 'bg-pantone564 text-white' : 'bg-pantone564/20 text-pantone564')} onClick={() => selectedDay ? quickAdd(ch, groupData.group, selectedDay) : setSelectedChore({ name: ch, group: groupData.group })}>{ch}</div>
+                      {days.map(day => (
+                        <div key={groupData.group + '-' + ch + '-' + day} className="p-2 border min-h-[80px] cursor-pointer" onClick={() => { if (selectedDay && !selectedChore.name) { quickAdd(ch, groupData.group, selectedDay); } else if (selectedChore.name && !selectedDay) { quickAdd(selectedChore.name, selectedChore.group, day); } }}>
                           <div className="flex flex-wrap gap-1">
-                            {getUsersForChoreAndDay(chore, group.group, day).map(entry => (
-                              <span
-                                key={entry.id}
-                                onClick={() => entry.own && deleteLog(entry.id)}
-                                className={
-                                  (entry.own
-                                    ? 'cursor-pointer bg-pantone564 text-white hover:line-through'
-                                    : 'bg-gray-300 text-gray-600') +
-                                  ' text-xs px-1 rounded'
-                                }
-                              >
-                                {entry.user}
-                              </span>
+                            {getUsers(ch, groupData.group, day).map(entry => (
+                              <span key={entry.id} onClick={() => entry.own && deleteLog(entry.id)} className={(entry.own ? 'cursor-pointer bg-pantone564 text-white hover:line-through' : 'bg-gray-300 text-gray-600') + ' text-xs px-1 rounded'}>{entry.user}</span>
                             ))}
                           </div>
                         </div>
@@ -357,8 +262,7 @@
     function App() {
       const [token, setToken] = useState(localStorage.getItem('token') || '');
       const logout = () => { localStorage.removeItem('token'); setToken(''); };
-
-      return token ? <ChoreTracker token={token} onLogout={logout} /> : <Auth onLogin={setToken} />;
+      return token ? <Tracker token={token} onLogout={logout} /> : <Login onToken={setToken} />;
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
