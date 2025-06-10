@@ -209,7 +209,9 @@
 
       return (
         <div className="p-6 max-w-7xl mx-auto">
+
           <header className="sticky top-0 z-20 bg-white rounded shadow p-4 mb-6">
+
             <h2 className="text-lg font-bold text-pantone564 mb-3">Chore Tracker</h2>
             <div className="flex gap-2 flex-wrap items-center">
               <input list="chore-suggest" className="flex-1 border p-2 rounded" placeholder="Enter chore" value={chore} onChange={e => setChore(e.target.value)} onKeyDown={e => e.key === 'Enter' && addChore()} />
