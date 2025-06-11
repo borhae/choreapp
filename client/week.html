@@ -106,19 +106,21 @@
           groups[grp][ch.name] = Array.from({length:7}, () => []);
         }
       });
-      const table = document.createElement('table');
-      table.className = 'border-collapse w-full text-sm';
-      const head = document.createElement('tr');
-      const empty = document.createElement('th');
-      empty.className = 'border bg-p604 px-1 sticky top-0 z-10';
-      head.appendChild(empty);
+      const header = document.createElement('div');
+      header.className = 'grid grid-cols-8 min-w-[800px]';
+      const headFirst = document.createElement('div');
+      headFirst.textContent = 'Chores';
+      headFirst.className = 'border bg-p604 px-1 font-semibold text-center sticky top-0 z-10';
+      header.appendChild(headFirst);
       days.forEach(d => {
-        const th = document.createElement('th');
-        th.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
-        th.className = 'border bg-p604 px-1 sticky top-0 z-10';
-        head.appendChild(th);
+        const div = document.createElement('div');
+        div.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
+        div.className = 'border bg-p604 px-1 font-semibold text-center sticky top-0 z-10';
+        header.appendChild(div);
       });
-      table.appendChild(head);
+
+      const table = document.createElement('table');
+      table.className = 'border-collapse w-full text-sm table-fixed';
       Object.keys(groups).forEach(grp => {
         const hr = document.createElement('tr');
         const ht = document.createElement('th');
@@ -142,8 +144,10 @@
           table.appendChild(tr);
         });
       });
-      document.getElementById('content').innerHTML = '';
-      document.getElementById('content').appendChild(table);
+      const contentEl = document.getElementById('content');
+      contentEl.innerHTML = '';
+      contentEl.appendChild(header);
+      contentEl.appendChild(table);
     }
   </script>
 </body>
