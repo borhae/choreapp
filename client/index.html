@@ -107,6 +107,15 @@
     }
 
     function ChoreTracker({ token, onLogout }) {
+      const authFetch = async (url, options = {}) => {
+        options.headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + token };
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+          onLogout();
+          return Promise.reject(new Error('Unauthorized'));
+        }
+        return res;
+      };
       const [newChore, setNewChore] = useState('');
       const [newGroup, setNewGroup] = useState('');
       const [chores, setChores] = useState([]);
@@ -152,8 +161,8 @@
 
       async function loadData() {
         const [logsRes, topRes] = await Promise.all([
-          fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } }),
-          fetch('/api/chores/top', { headers: { 'Authorization': 'Bearer ' + token } })
+          authFetch('/api/logs/all'),
+          authFetch('/api/chores/top')
         ]);
         const logs = await logsRes.json();
         const top = await topRes.json();
@@ -195,11 +204,10 @@
         }
         const tsDate = new Date(start);
         tsDate.setDate(start.getDate() + dayIndex);
-        await fetch('/api/chores', {
+        await authFetch('/api/chores', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ name: newChore.trim(), ts: tsDate.getTime(), group: newGroup.trim() })
         });
@@ -214,11 +222,10 @@
         const dayIndex = weekdays.indexOf(day);
         const tsDate = new Date(start);
         tsDate.setDate(start.getDate() + (dayIndex === -1 ? 0 : dayIndex));
-        await fetch('/api/chores', {
+        await authFetch('/api/chores', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ name: choreName, ts: tsDate.getTime(), group: groupName })
         });
@@ -228,25 +235,26 @@
       }
 
       async function deleteLog(id) {
-        await fetch(`/api/logs/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
+        await authFetch(`/api/logs/${id}`, {
+          method: 'DELETE'
         });
         loadData();
       }
 
       useEffect(() => {
         if (!newChore.trim()) { setSuggestions([]); return; }
-        fetch('/api/chores/autocomplete?q=' + encodeURIComponent(newChore.trim()), {
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).then(r => r.json()).then(setSuggestions);
+        authFetch('/api/chores/autocomplete?q=' + encodeURIComponent(newChore.trim()))
+          .then(r => r.json())
+          .then(setSuggestions)
+          .catch(() => {});
       }, [newChore]);
 
       useEffect(() => {
         if (!newGroup.trim()) { setGroupSuggestions([]); return; }
-        fetch('/api/groups/autocomplete?q=' + encodeURIComponent(newGroup.trim()), {
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).then(r => r.json()).then(setGroupSuggestions);
+        authFetch('/api/groups/autocomplete?q=' + encodeURIComponent(newGroup.trim()))
+          .then(r => r.json())
+          .then(setGroupSuggestions)
+          .catch(() => {});
       }, [newGroup]);
 
       const getUsersForChoreAndDay = (chore, group, day) => {

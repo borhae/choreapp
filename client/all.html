@@ -28,6 +28,16 @@
   </div>
   <script>
     const token = localStorage.getItem('token') || '';
+    const authFetch = async (url, options = {}) => {
+      options.headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + token };
+      const res = await fetch(url, options);
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        location.href = 'index.html';
+        return Promise.reject(new Error('Unauthorized'));
+      }
+      return res;
+    };
     let username = '';
     if (token) {
       username = JSON.parse(atob(token.split('.')[1])).username;
@@ -45,7 +55,7 @@
     }
 
     async function loadAllLogs() {
-      const res = await fetch('/api/logs/all', { headers: { 'Authorization': 'Bearer ' + token } });
+      const res = await authFetch('/api/logs/all');
       const logs = await res.json();
       const grouped = {};
       logs.forEach(l => {
@@ -78,9 +88,8 @@
             if (l.user === username) {
               il.className = 'cursor-pointer hover:line-through';
               il.addEventListener('click', async () => {
-                await fetch(`/api/logs/${l.id}`, {
-                  method: 'DELETE',
-                  headers: { 'Authorization': 'Bearer ' + token }
+                await authFetch(`/api/logs/${l.id}`, {
+                  method: 'DELETE'
                 });
                 loadAllLogs();
               });
