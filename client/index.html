@@ -78,28 +78,30 @@
 
     function WeekdayHeader({ weekdays, selectedDay, setSelectedDay, selectedChore, quickAdd }) {
       return (
-        <div className="grid grid-cols-8 gap-2 min-w-[800px]">
-          <div className="font-semibold p-3 text-center sticky top-0 bg-white z-10">Chores</div>
-          {weekdays.map(day => (
-            <div
-              key={day}
-              onClick={() => {
-                if (selectedChore.name) {
-                  quickAdd(selectedChore.name, selectedChore.group, day);
-                } else {
-                  setSelectedDay(day);
+        <div className="sticky top-0 bg-white z-10">
+          <div className="grid grid-cols-8 gap-2 min-w-[800px]">
+            <div className="font-semibold p-3 text-center border-b">Chores</div>
+            {weekdays.map(day => (
+              <div
+                key={day}
+                onClick={() => {
+                  if (selectedChore.name) {
+                    quickAdd(selectedChore.name, selectedChore.group, day);
+                  } else {
+                    setSelectedDay(day);
+                  }
+                }}
+                className={
+                  "font-semibold p-3 text-center border-b cursor-pointer " +
+                  (selectedDay === day
+                    ? "bg-pantone604 text-pantone564"
+                    : "bg-pantone604/30 text-pantone564")
                 }
-              }}
-              className={
-                "font-semibold p-3 text-center border-b cursor-pointer sticky top-0 z-10 " +
-                (selectedDay === day
-                  ? "bg-pantone604 text-pantone564"
-                  : "bg-pantone604/30 text-pantone564")
-              }
-            >
-              {day}
-            </div>
-          ))}
+              >
+                {day}
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
