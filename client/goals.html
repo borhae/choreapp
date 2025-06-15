@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Goals</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pantone564: '#05705e',
+            pantone604: '#e8dd21'
+          }
+        }
+      }
+    };
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-pantone604/10 to-pantone564/10 min-h-screen flex items-center justify-center">
+  <div id="root" class="w-full"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = (day + 6) % 7;
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() - diff);
+      return d;
+    }
+
+    function isoWeekNumber(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+      const week1 = new Date(d.getFullYear(), 0, 4);
+      return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+    }
+
+    function GoalsPage() {
+      const token = localStorage.getItem('token') || '';
+      const authFetch = async (url, options = {}) => {
+        options.headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + token };
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          location.href = 'index.html';
+          return Promise.reject(new Error('Unauthorized'));
+        }
+        return res;
+      };
+      const [goals, setGoals] = useState([]);
+      const [logs, setLogs] = useState([]);
+      const [name, setName] = useState('');
+      const [group, setGroup] = useState('');
+      const [weekOffset, setWeekOffset] = useState(0);
+      const [groupSuggestions, setGroupSuggestions] = useState([]);
+
+      useEffect(() => { loadData(); }, []);
+      useEffect(() => { if (!group.trim()) { setGroupSuggestions([]); return; } authFetch('/api/groups/autocomplete?q=' + encodeURIComponent(group.trim())).then(r=>r.json()).then(setGroupSuggestions).catch(()=>{}); }, [group]);
+
+      async function loadData() {
+        const [gRes, lRes] = await Promise.all([
+          authFetch('/api/weekly-goals'),
+          authFetch('/api/logs/all')
+        ]);
+        setGoals(await gRes.json());
+        setLogs(await lRes.json());
+      }
+
+      async function addGoal() {
+        if (!name.trim()) return;
+        await authFetch('/api/weekly-goals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim(), group: group.trim() })
+        });
+        setName('');
+        setGroup('');
+        loadData();
+      }
+
+      const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
+      const end = new Date(start); end.setDate(start.getDate() + 6);
+      const weekNum = isoWeekNumber(start);
+      const weekLabel = `Week ${weekNum} (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`;
+
+      const usersForGoal = (goalName, groupName) => {
+        const users = new Set();
+        const s = start.getTime();
+        const e = s + 7*24*60*60*1000;
+        logs.forEach(l => {
+          if (l.chore.toLowerCase() === goalName.toLowerCase() && (l.group || '') === (groupName || '')) {
+            if (l.ts >= s && l.ts < e) {
+              const user = l.user.slice(0,3);
+              users.add(user);
+            }
+          }
+        });
+        return Array.from(users);
+      };
+
+      const grouped = {};
+      goals.forEach(g => {
+        const grp = g.group || 'Ungrouped';
+        if (!grouped[grp]) grouped[grp] = [];
+        grouped[grp].push(g);
+      });
+
+      return (
+        <div className="p-6 max-w-3xl mx-auto">
+          <div className="mb-6 bg-white rounded shadow p-4">
+            <h2 className="text-lg font-bold text-pantone564 mb-3">Weekly Goals</h2>
+            <div className="flex gap-2 flex-wrap items-center">
+              <input className="flex-1 border p-2 rounded" placeholder="Goal name" value={name} onChange={e => setName(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
+              <input list="group-suggestions" className="border p-2 rounded" placeholder="Group" value={group} onChange={e => setGroup(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
+              <datalist id="group-suggestions">
+                {groupSuggestions.map(name => <option key={name} value={name} />)}
+              </datalist>
+              <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addGoal}>Add</button>
+              <a href="index.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">Back</a>
+            </div>
+          </div>
+          <div className="bg-white rounded shadow p-4 overflow-x-auto">
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={() => setWeekOffset(weekOffset - 1)} className="px-2 py-1 bg-gray-200 rounded">&lt;</button>
+              <div className="font-semibold">{weekLabel}</div>
+              <button onClick={() => setWeekOffset(weekOffset + 1)} className="px-2 py-1 bg-gray-200 rounded">&gt;</button>
+            </div>
+            <div className="space-y-4">
+              {Object.keys(grouped).map(grp => (
+                <div key={grp}>
+                  <div className="font-semibold text-pantone564 mb-1">{grp}</div>
+                  <ul className="list-disc pl-4">
+                    {grouped[grp].map(goal => (
+                      <li key={goal.id} className="mb-1 flex items-center gap-2">
+                        <span>{goal.name}</span>
+                        <span className="text-sm text-gray-600">{usersForGoal(goal.name, goal.group).join(', ')}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<GoalsPage />);
+  </script>
+</body>
+</html>
+
