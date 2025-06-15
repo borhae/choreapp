@@ -48,11 +48,11 @@ Start the container and mount a host file to persist the database:
 
 ```bash
 docker run -p 3000:3000 \
-  -v $(pwd)/db.json:/app/server/db.json \
+  -v $(pwd)/db.json:/app/data/db.json \
   choreapp
 ```
 
-The server uses `/app/server/db.json` by default. You can specify a different
+The server uses `/app/data/db.json` by default. You can specify a different
 location inside the container with the `DB_FILE` environment variable. Adjust
 the mounted path accordingly:
 
