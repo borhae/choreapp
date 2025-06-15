@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import http from 'http';
 import { WebSocketServer } from 'ws';
@@ -27,7 +28,11 @@ function broadcastUpdate() {
   });
 }
 
-const dbFile = process.env.DB_FILE || path.join(__dirname, 'db.json');
+const dbFile = process.env.DB_FILE || path.join(__dirname, '../data/db.json');
+const dbDir = path.dirname(dbFile);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 const adapter = new JSONFile(dbFile);
 const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [] });
 
