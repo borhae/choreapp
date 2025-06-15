@@ -34,17 +34,18 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 const adapter = new JSONFile(dbFile);
-const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [] });
+const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [], weeklyGoals: [] });
 
 async function initDB() {
   await db.read();
   if (!db.data) {
-    db.data = { users: [], chores: [], logs: [], groups: [] };
+    db.data = { users: [], chores: [], logs: [], groups: [], weeklyGoals: [] };
   } else {
     if (!Array.isArray(db.data.users)) db.data.users = [];
     if (!Array.isArray(db.data.chores)) db.data.chores = [];
     if (!Array.isArray(db.data.logs)) db.data.logs = [];
     if (!Array.isArray(db.data.groups)) db.data.groups = [];
+    if (!Array.isArray(db.data.weeklyGoals)) db.data.weeklyGoals = [];
   }
   await db.write();
 }
@@ -117,6 +118,44 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
     await db.write();
   }
   res.json(group);
+});
+
+app.get('/api/weekly-goals', authMiddleware, async (req, res) => {
+  await db.read();
+  const goals = db.data.weeklyGoals.map(g => {
+    const group = g.groupId ? db.data.groups.find(gr => gr.id === g.groupId) : null;
+    return { id: g.id, name: g.name, group: group ? group.name : '' };
+  });
+  res.json(goals);
+});
+
+app.post('/api/weekly-goals', authMiddleware, async (req, res) => {
+  const { name, group } = req.body;
+  if (!name) return res.status(400).json({ error: 'Missing goal name' });
+  await db.read();
+  let groupId = null;
+  if (group) {
+    let g = db.data.groups.find(gr => gr.name.toLowerCase() === group.toLowerCase());
+    if (!g) {
+      g = { id: uuidv4(), name: group };
+      db.data.groups.push(g);
+    }
+    groupId = g.id;
+  }
+  let goal = db.data.weeklyGoals.find(g => g.name.toLowerCase() === name.toLowerCase() && g.groupId === groupId);
+  if (!goal) {
+    goal = { id: uuidv4(), name, groupId };
+    db.data.weeklyGoals.push(goal);
+  }
+  let chore = db.data.chores.find(c => c.name.toLowerCase() === name.toLowerCase() && c.groupId === groupId);
+  if (!chore) {
+    chore = { id: uuidv4(), name, groupId };
+    db.data.chores.push(chore);
+  }
+  await db.write();
+  broadcastUpdate();
+  const groupName = group || '';
+  res.json({ id: goal.id, name: goal.name, group: groupName });
 });
 
 app.get('/api/chores/autocomplete', authMiddleware, async (req, res) => {
