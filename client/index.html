@@ -286,7 +286,11 @@
       async function selectBuiltin(name) {
         const body = new URLSearchParams();
         body.append('builtin', name);
-        const res = await authFetch('/api/users/avatar', { method: 'POST', body });
+        const res = await authFetch('/api/users/avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
         const data = await res.json();
         setAvatar(data.avatar);
         setEditingAvatar(false);
@@ -295,7 +299,11 @@
       async function selectExisting(file) {
         const body = new URLSearchParams();
         body.append('existing', file);
-        const res = await authFetch('/api/users/avatar', { method: 'POST', body });
+        const res = await authFetch('/api/users/avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
         const data = await res.json();
         setAvatar(data.avatar);
         setEditingAvatar(false);

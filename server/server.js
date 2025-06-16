@@ -335,7 +335,7 @@ app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (re
     return res.json({ message: 'Avatar updated', avatar: user.avatar });
   }
   if (req.body.existing) {
-    const file = path.basename(req.body.existing);
+    const file = decodeURIComponent(path.basename(req.body.existing));
     const filePath = path.join(avatarsDir, file);
     if (!filePath.startsWith(avatarsDir) || !fs.existsSync(filePath)) {
       return res.status(400).json({ error: 'Invalid file' });
