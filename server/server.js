@@ -10,6 +10,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import http from 'http';
 import { WebSocketServer } from 'ws';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,7 @@ app.use(morgan('dev'));
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+const upload = multer({ dest: path.join(__dirname, '../data/avatars') });
 
 function broadcastUpdate() {
   const msg = JSON.stringify({ type: 'update' });
@@ -32,6 +34,10 @@ const dbFile = process.env.DB_FILE || path.join(__dirname, '../data/db.json');
 const dbDir = path.dirname(dbFile);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
+}
+const avatarsDir = path.join(__dirname, '../data/avatars');
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
 }
 const adapter = new JSONFile(dbFile);
 const db = new Low(adapter, { users: [], chores: [], logs: [], groups: [], weeklyGoals: [] });
@@ -46,6 +52,7 @@ async function initDB() {
     if (!Array.isArray(db.data.logs)) db.data.logs = [];
     if (!Array.isArray(db.data.groups)) db.data.groups = [];
     if (!Array.isArray(db.data.weeklyGoals)) db.data.weeklyGoals = [];
+    db.data.users.forEach(u => { if (!('avatar' in u)) u.avatar = ''; });
   }
   await db.write();
 }
@@ -79,7 +86,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(400).json({ error: 'User exists' });
   }
   const hashed = await bcrypt.hash(password, 10);
-  const user = { id: uuidv4(), username, password: hashed };
+  const user = { id: uuidv4(), username, password: hashed, avatar: '' };
   db.data.users.push(user);
   await db.write();
   res.json({ message: 'Registered' });
@@ -270,6 +277,39 @@ app.get('/api/chores/top', authMiddleware, async (req, res) => {
     };
   });
   res.json(top);
+});
+
+// Serve uploaded avatars
+app.use('/avatars', express.static(path.join(__dirname, '../data/avatars')));
+
+// Get current user profile
+app.get('/api/users/me', authMiddleware, async (req, res) => {
+  await db.read();
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ id: user.id, username: user.username, avatar: user.avatar || '' });
+});
+
+
+// Update avatar: either upload a file or choose a built-in
+app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
+  await db.read();
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (req.body.builtin) {
+    user.avatar = req.body.builtin;
+    await db.write();
+    broadcastUpdate();
+    return res.json({ message: 'Avatar updated', avatar: user.avatar });
+  }
+  if (!req.file) return res.status(400).json({ error: 'No file' });
+  const ext = path.extname(req.file.originalname || '.png');
+  const newName = user.id + ext;
+  fs.renameSync(req.file.path, path.join(req.file.destination, newName));
+  user.avatar = newName;
+  await db.write();
+  broadcastUpdate();
+  res.json({ message: 'Avatar updated', avatar: user.avatar });
 });
 
 app.use(express.static(path.join(__dirname, '../client')));

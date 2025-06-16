@@ -8,6 +8,8 @@ also choose the weekday before adding a chore so it is logged for that day.
 
 You can log out at any time using the **Logout** button in the app.
 
+Users can personalize their profile with an avatar. Click the **Edit** button next to your avatar to choose from a few cute emoji presets or upload your own image.
+
 
 Chores can be organized into **groups**. When adding a chore you may specify a
 group name. Groups are created automatically and inputs provide autocomplete
