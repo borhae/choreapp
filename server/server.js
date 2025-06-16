@@ -62,6 +62,8 @@ initDB();
 // Secret used for signing JWT tokens. Can be overridden by the SECRET
 // environment variable.
 const SECRET = process.env.SECRET || 'replace-this-secret';
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'adminpass';
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -75,6 +77,19 @@ function authMiddleware(req, res, next) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired' });
     }
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+function adminAuthMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const payload = jwt.verify(token, SECRET);
+    if (!payload.admin) throw new Error('Not admin');
+    next();
+  } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 }
@@ -106,6 +121,15 @@ app.post('/api/login', async (req, res) => {
     { expiresIn: '1d' }
   );
   res.json({ token });
+});
+
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = jwt.sign({ admin: true }, SECRET, { expiresIn: '1d' });
+    return res.json({ token });
+  }
+  res.status(400).json({ error: 'Invalid credentials' });
 });
 
 app.get('/api/groups/autocomplete', authMiddleware, async (req, res) => {
@@ -311,6 +335,33 @@ app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (re
   await db.write();
   broadcastUpdate();
   res.json({ message: 'Avatar updated', avatar: user.avatar });
+});
+
+app.get('/api/admin/avatars', adminAuthMiddleware, async (req, res) => {
+  fs.readdir(avatarsDir, (err, files) => {
+    if (err) return res.status(500).json({ error: 'Failed to read avatars' });
+    res.json(files);
+  });
+});
+
+app.delete('/api/admin/avatars/:file', adminAuthMiddleware, async (req, res) => {
+  const filename = req.params.file;
+  const filePath = path.join(avatarsDir, filename);
+  if (!filePath.startsWith(avatarsDir)) {
+    return res.status(400).json({ error: 'Invalid file' });
+  }
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await db.read();
+    let changed = false;
+    db.data.users.forEach(u => {
+      if (u.avatar === filename) { u.avatar = ''; changed = true; }
+    });
+    if (changed) { await db.write(); broadcastUpdate(); }
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
+  }
 });
 
 app.use(express.static(path.join(__dirname, '../client')));
