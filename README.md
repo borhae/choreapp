@@ -64,3 +64,10 @@ docker run -p 3000:3000 \
   -v $(pwd)/mydb.json:/app/data/mydb.json \
   choreapp
 ```
+
+## Admin page
+
+Visit `http://localhost:3000/admin.html` for administrative tasks. The
+login uses the `ADMIN_USER` and `ADMIN_PASS` environment variables
+(defaults are `admin` / `adminpass`). After authentication you can view
+and delete uploaded avatar images.

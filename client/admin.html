@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-6 bg-gray-50">
+  <div id="app" class="max-w-lg mx-auto"></div>
+  <script>
+    const app = document.getElementById('app');
+    let token = localStorage.getItem('adminToken') || '';
+
+    function renderLogin() {
+      app.innerHTML = `
+        <div class="bg-white p-4 rounded shadow space-y-2">
+          <h1 class="text-xl font-bold mb-2">Admin Login</h1>
+          <input id="user" placeholder="Username" class="border p-2 w-full rounded" />
+          <input id="pass" type="password" placeholder="Password" class="border p-2 w-full rounded" />
+          <button id="login" class="bg-blue-500 text-white w-full p-2 rounded">Login</button>
+        </div>`;
+      document.getElementById('login').onclick = async () => {
+        const username = document.getElementById('user').value;
+        const password = document.getElementById('pass').value;
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.token) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          loadAvatars();
+        } else {
+          alert('Invalid credentials');
+        }
+      };
+    }
+
+    async function loadAvatars() {
+      const res = await fetch('/api/admin/avatars', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (res.status === 401) { token=''; localStorage.removeItem('adminToken'); return renderLogin(); }
+      const files = await res.json();
+      renderAvatars(files);
+    }
+
+    function renderAvatars(files) {
+      app.innerHTML = `<div class="bg-white p-4 rounded shadow">
+        <h1 class="text-xl font-bold mb-4">Avatar Files</h1>
+        <ul id="list" class="space-y-2"></ul>
+        <button id="logout" class="mt-4 text-sm text-blue-600">Logout</button>
+      </div>`;
+      document.getElementById('logout').onclick = () => { localStorage.removeItem('adminToken'); token=''; renderLogin(); };
+      const list = document.getElementById('list');
+      files.forEach(f => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center';
+        li.innerHTML = `<span>${f}</span><button class="text-red-600" data-file="${f}">Delete</button>`;
+        list.appendChild(li);
+      });
+      list.querySelectorAll('button').forEach(btn => {
+        btn.onclick = async () => {
+          const file = btn.getAttribute('data-file');
+          await fetch('/api/admin/avatars/' + encodeURIComponent(file), {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + token }
+          });
+          loadAvatars();
+        };
+      });
+    }
+
+    if (token) {
+      loadAvatars();
+    } else {
+      renderLogin();
+    }
+  </script>
+</body>
+</html>
