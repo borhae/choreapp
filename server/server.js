@@ -327,6 +327,17 @@ app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (re
     broadcastUpdate();
     return res.json({ message: 'Avatar updated', avatar: user.avatar });
   }
+  if (req.body.existing) {
+    const file = path.basename(req.body.existing);
+    const filePath = path.join(avatarsDir, file);
+    if (!filePath.startsWith(avatarsDir) || !fs.existsSync(filePath)) {
+      return res.status(400).json({ error: 'Invalid file' });
+    }
+    user.avatar = file;
+    await db.write();
+    broadcastUpdate();
+    return res.json({ message: 'Avatar updated', avatar: user.avatar });
+  }
   if (!req.file) return res.status(400).json({ error: 'No file' });
   const ext = path.extname(req.file.originalname || '.png');
   const newName = user.id + ext;
@@ -335,6 +346,13 @@ app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (re
   await db.write();
   broadcastUpdate();
   res.json({ message: 'Avatar updated', avatar: user.avatar });
+});
+
+app.get('/api/avatars', authMiddleware, async (req, res) => {
+  fs.readdir(avatarsDir, (err, files) => {
+    if (err) return res.status(500).json({ error: 'Failed to read avatars' });
+    res.json(files);
+  });
 });
 
 app.get('/api/admin/avatars', adminAuthMiddleware, async (req, res) => {
