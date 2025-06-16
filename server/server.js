@@ -22,7 +22,14 @@ app.use(morgan('dev'));
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-const upload = multer({ dest: path.join(__dirname, '../data/avatars') });
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../data/avatars'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '.png');
+    cb(null, uuidv4() + ext);
+  }
+});
+const upload = multer({ storage });
 
 function broadcastUpdate() {
   const msg = JSON.stringify({ type: 'update' });
@@ -339,10 +346,7 @@ app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (re
     return res.json({ message: 'Avatar updated', avatar: user.avatar });
   }
   if (!req.file) return res.status(400).json({ error: 'No file' });
-  const ext = path.extname(req.file.originalname || '.png');
-  const newName = user.id + ext;
-  fs.renameSync(req.file.path, path.join(req.file.destination, newName));
-  user.avatar = newName;
+  user.avatar = req.file.filename;
   await db.write();
   broadcastUpdate();
   res.json({ message: 'Avatar updated', avatar: user.avatar });
