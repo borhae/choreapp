@@ -25,11 +25,19 @@ const wss = new WebSocketServer({ server });
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../data/avatars'),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '.png');
-    cb(null, uuidv4() + ext);
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+    const finalExt = allowed.includes(ext) ? ext : '.png';
+    cb(null, uuidv4() + finalExt);
   }
 });
-const upload = multer({ storage });
+function fileFilter(req, file, cb) {
+  if (!file.mimetype.startsWith('image/')) {
+    return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+  }
+  cb(null, true);
+}
+const upload = multer({ storage, fileFilter });
 
 function broadcastUpdate() {
   const msg = JSON.stringify({ type: 'update' });
@@ -324,32 +332,37 @@ app.get('/api/users/me', authMiddleware, async (req, res) => {
 
 
 // Update avatar: either upload a file or choose a built-in
-app.post('/api/users/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
-  await db.read();
-  const user = db.data.users.find(u => u.id === req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  if (req.body.builtin) {
-    user.avatar = req.body.builtin;
-    await db.write();
-    broadcastUpdate();
-    return res.json({ message: 'Avatar updated', avatar: user.avatar });
-  }
-  if (req.body.existing) {
-    const file = decodeURIComponent(path.basename(req.body.existing));
-    const filePath = path.join(avatarsDir, file);
-    if (!filePath.startsWith(avatarsDir) || !fs.existsSync(filePath)) {
-      return res.status(400).json({ error: 'Invalid file' });
+app.post('/api/users/avatar', authMiddleware, (req, res) => {
+  upload.single('avatar')(req, res, async err => {
+    if (err) {
+      return res.status(400).json({ error: 'Only image files allowed' });
     }
-    user.avatar = file;
+    await db.read();
+    const user = db.data.users.find(u => u.id === req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (req.body.builtin) {
+      user.avatar = req.body.builtin;
+      await db.write();
+      broadcastUpdate();
+      return res.json({ message: 'Avatar updated', avatar: user.avatar });
+    }
+    if (req.body.existing) {
+      const file = decodeURIComponent(path.basename(req.body.existing));
+      const filePath = path.join(avatarsDir, file);
+      if (!filePath.startsWith(avatarsDir) || !fs.existsSync(filePath)) {
+        return res.status(400).json({ error: 'Invalid file' });
+      }
+      user.avatar = file;
+      await db.write();
+      broadcastUpdate();
+      return res.json({ message: 'Avatar updated', avatar: user.avatar });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    user.avatar = req.file.filename;
     await db.write();
     broadcastUpdate();
-    return res.json({ message: 'Avatar updated', avatar: user.avatar });
-  }
-  if (!req.file) return res.status(400).json({ error: 'No file' });
-  user.avatar = req.file.filename;
-  await db.write();
-  broadcastUpdate();
-  res.json({ message: 'Avatar updated', avatar: user.avatar });
+    res.json({ message: 'Avatar updated', avatar: user.avatar });
+  });
 });
 
 app.get('/api/avatars', authMiddleware, async (req, res) => {
