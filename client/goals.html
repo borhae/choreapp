@@ -20,12 +20,17 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="i18n.js"></script>
 </head>
 <body class="bg-gradient-to-br from-pantone604/10 to-pantone564/10 min-h-screen flex items-center justify-center">
   <div id="root" class="w-full"></div>
 
   <script type="text/babel">
     const { useState, useEffect } = React;
+
+    loadLanguage(localStorage.getItem('lang') || 'en').then(start);
+
+    function start() {
 
     function startOfWeek(date) {
       const d = new Date(date);
@@ -117,15 +122,20 @@
       return (
         <div className="p-6 max-w-3xl mx-auto">
           <div className="mb-6 bg-white rounded shadow p-4">
-            <h2 className="text-lg font-bold text-pantone564 mb-3">Weekly Goals</h2>
+            <h2 className="text-lg font-bold text-pantone564 mb-3">{t('weekly_goals')}</h2>
             <div className="flex gap-2 flex-wrap items-center">
-              <input className="flex-1 border p-2 rounded" placeholder="Goal name" value={name} onChange={e => setName(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
-              <input list="group-suggestions" className="border p-2 rounded" placeholder="Group" value={group} onChange={e => setGroup(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
+              <input className="flex-1 border p-2 rounded" placeholder={t('goal_name')} value={name} onChange={e => setName(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
+              <input list="group-suggestions" className="border p-2 rounded" placeholder={t('group')} value={group} onChange={e => setGroup(e.target.value)} onKeyDown={e=>e.key==='Enter' && addGoal()} />
               <datalist id="group-suggestions">
                 {groupSuggestions.map(name => <option key={name} value={name} />)}
               </datalist>
-              <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addGoal}>Add</button>
-              <a href="index.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">Back</a>
+              <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addGoal}>{t('add')}</button>
+              <a href="index.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">{t('back')}</a>
+              <label className="ml-2 mr-1">{t('language')}:</label>
+              <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
+                <option value="en">English</option>
+                <option value="es">Espa\u00f1ol</option>
+              </select>
             </div>
           </div>
           <div className="bg-white rounded shadow p-4 overflow-x-auto">
@@ -155,6 +165,7 @@
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<GoalsPage />);
+    }
   </script>
 </body>
 </html>
