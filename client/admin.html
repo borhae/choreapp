@@ -5,21 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="i18n.js"></script>
 </head>
 <body class="p-6 bg-gray-50">
   <div id="app" class="max-w-lg mx-auto"></div>
   <script>
+    loadLanguage(localStorage.getItem('lang') || 'en').then(init);
+
+    function init() {
     const app = document.getElementById('app');
     let token = localStorage.getItem('adminToken') || '';
 
     function renderLogin() {
       app.innerHTML = `
         <div class="bg-white p-4 rounded shadow space-y-2">
-          <h1 class="text-xl font-bold mb-2">Admin Login</h1>
-          <input id="user" placeholder="Username" class="border p-2 w-full rounded" />
-          <input id="pass" type="password" placeholder="Password" class="border p-2 w-full rounded" />
-          <button id="login" class="bg-blue-500 text-white w-full p-2 rounded">Login</button>
+          <h1 class="text-xl font-bold mb-2">${t('admin_login')}</h1>
+          <input id="user" placeholder="${t('username')}" class="border p-2 w-full rounded" />
+          <input id="pass" type="password" placeholder="${t('password')}" class="border p-2 w-full rounded" />
+          <button id="login" class="bg-blue-500 text-white w-full p-2 rounded">${t('login')}</button>
+          <div class="text-right">
+            <label class="mr-2">${t('language')}:</label>
+            <select id="lang-select" class="border p-1 rounded">
+              <option value="en">English</option>
+              <option value="es">Espa\u00f1ol</option>
+            </select>
+          </div>
         </div>`;
+      document.getElementById('lang-select').value = window.i18n.language;
+      document.getElementById('lang-select').onchange = e => loadLanguage(e.target.value).then(()=>{location.reload();});
       document.getElementById('login').onclick = async () => {
         const username = document.getElementById('user').value;
         const password = document.getElementById('pass').value;
@@ -50,16 +63,22 @@
 
     function renderAvatars(files) {
       app.innerHTML = `<div class="bg-white p-4 rounded shadow">
-        <h1 class="text-xl font-bold mb-4">Avatar Files</h1>
+        <h1 class="text-xl font-bold mb-4">${t('avatar_files')}</h1>
         <ul id="list" class="space-y-2"></ul>
-        <button id="logout" class="mt-4 text-sm text-blue-600">Logout</button>
+        <button id="logout" class="mt-4 text-sm text-blue-600">${t('logout')}</button>
+        <select id="lang-select" class="ml-2 border p-1 rounded">
+          <option value="en">English</option>
+          <option value="es">Espa\u00f1ol</option>
+        </select>
       </div>`;
       document.getElementById('logout').onclick = () => { localStorage.removeItem('adminToken'); token=''; renderLogin(); };
+      document.getElementById('lang-select').value = window.i18n.language;
+      document.getElementById('lang-select').onchange = e => loadLanguage(e.target.value).then(()=>{location.reload();});
       const list = document.getElementById('list');
       files.forEach(f => {
         const li = document.createElement('li');
         li.className = 'flex justify-between items-center';
-        li.innerHTML = `<span>${f}</span><button class="text-red-600" data-file="${f}">Delete</button>`;
+        li.innerHTML = `<span>${f}</span><button class="text-red-600" data-file="${f}">${t('delete')}</button>`;
         list.appendChild(li);
       });
       list.querySelectorAll('button').forEach(btn => {
@@ -79,6 +98,7 @@
     } else {
       renderLogin();
     }
+  }
   </script>
 </body>
 </html>
