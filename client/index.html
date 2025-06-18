@@ -82,6 +82,7 @@
             <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
               <option value="en">English</option>
               <option value="es">Espa\u00f1ol</option>
+                <option value="de">Deutsch</option>
             </select>
           </div>
         </div>
@@ -110,7 +111,7 @@
                     : "bg-pantone604/30 text-pantone564")
                 }
               >
-                {day}
+                {t(day.toLowerCase())}
               </div>
             ))}
           </div>
@@ -329,7 +330,7 @@
           const res = await authFetch('/api/users/avatar', { method: 'POST', body: form });
           if (!res.ok) {
             const err = await res.json();
-            alert(err.error || 'Upload failed');
+            alert(err.error || t('upload_failed'));
             return;
           }
           const data = await res.json();
@@ -341,7 +342,9 @@
       const weekNum = isoWeekNumber(start);
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
-      const weekLabel = `Week ${weekNum} (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`;
+      const localeMap = { en: 'en-US', es: 'es-ES', de: 'de-DE' };
+      const loc = localeMap[window.i18n.language] || 'en-US';
+      const weekLabel = `${t('week')} ${weekNum} (${start.toLocaleDateString(loc)} - ${end.toLocaleDateString(loc)})`;
 
       return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -385,6 +388,7 @@
               <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
                 <option value="en">English</option>
                 <option value="es">Espa\u00f1ol</option>
+                <option value="de">Deutsch</option>
               </select>
             </div>
             {editingAvatar && (
@@ -430,7 +434,7 @@
               <div className="grid grid-cols-8 gap-2 min-w-[800px]">
                   {chores.map(group => (
                     <React.Fragment key={group.group}>
-                      <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{group.group}</div>
+                      <div className="col-span-8 font-semibold bg-pantone564/10 p-2 text-pantone564">{group.group === 'Ungrouped' ? t('ungrouped') : group.group}</div>
                   {group.chores.map(chore => (
                     <div key={group.group + '-' + chore} className="contents">
                       <div

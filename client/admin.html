@@ -28,6 +28,7 @@
             <select id="lang-select" class="border p-1 rounded">
               <option value="en">English</option>
               <option value="es">Espa\u00f1ol</option>
+              <option value="de">Deutsch</option>
             </select>
           </div>
         </div>`;
@@ -47,7 +48,7 @@
           localStorage.setItem('adminToken', token);
           loadAvatars();
         } else {
-          alert('Invalid credentials');
+          alert(t('invalid_credentials'));
         }
       };
     }
@@ -69,6 +70,7 @@
         <select id="lang-select" class="ml-2 border p-1 rounded">
           <option value="en">English</option>
           <option value="es">Espa\u00f1ol</option>
+              <option value="de">Deutsch</option>
         </select>
       </div>`;
       document.getElementById('logout').onclick = () => { localStorage.removeItem('adminToken'); token=''; renderLogin(); };

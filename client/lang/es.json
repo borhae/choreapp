@@ -23,5 +23,16 @@
   "avatar_files": "Archivos de avatar",
   "delete": "Eliminar",
   "language": "Idioma",
-  "enter_chore_name": "Ingresar tarea..."
+  "enter_chore_name": "Ingresar tarea...",
+  "invalid_credentials": "Credenciales inválidas",
+  "upload_failed": "Error al subir archivo",
+  "week": "Semana",
+  "ungrouped": "Sin grupo",
+  "mon": "Lun",
+  "tue": "Mar",
+  "wed": "Mié",
+  "thu": "Jue",
+  "fri": "Vie",
+  "sat": "Sáb",
+  "sun": "Dom"
 }

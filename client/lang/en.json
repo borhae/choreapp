@@ -23,5 +23,16 @@
   "avatar_files": "Avatar Files",
   "delete": "Delete",
   "language": "Language",
-  "enter_chore_name": "Enter chore name..."
+  "enter_chore_name": "Enter chore name...",
+  "invalid_credentials": "Invalid credentials",
+  "upload_failed": "Upload failed",
+  "week": "Week",
+  "ungrouped": "Ungrouped",
+  "mon": "Mon",
+  "tue": "Tue",
+  "wed": "Wed",
+  "thu": "Thu",
+  "fri": "Fri",
+  "sat": "Sat",
+  "sun": "Sun"
 }

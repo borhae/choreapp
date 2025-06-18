@@ -95,7 +95,9 @@
       const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
       const end = new Date(start); end.setDate(start.getDate() + 6);
       const weekNum = isoWeekNumber(start);
-      const weekLabel = `Week ${weekNum} (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`;
+      const localeMap = { en: 'en-US', es: 'es-ES', de: 'de-DE' };
+      const loc = localeMap[window.i18n.language] || 'en-US';
+      const weekLabel = `${t('week')} ${weekNum} (${start.toLocaleDateString(loc)} - ${end.toLocaleDateString(loc)})`;
 
       const usersForGoal = (goalName, groupName) => {
         const users = new Set();
@@ -135,6 +137,7 @@
               <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
                 <option value="en">English</option>
                 <option value="es">Espa\u00f1ol</option>
+                <option value="de">Deutsch</option>
               </select>
             </div>
           </div>
@@ -147,7 +150,7 @@
             <div className="space-y-4">
               {Object.keys(grouped).map(grp => (
                 <div key={grp}>
-                  <div className="font-semibold text-pantone564 mb-1">{grp}</div>
+                  <div className="font-semibold text-pantone564 mb-1">{grp === 'Ungrouped' ? t('ungrouped') : grp}</div>
                   <ul className="list-disc pl-4">
                     {grouped[grp].map(goal => (
                       <li key={goal.id} className="mb-1 flex items-center gap-2">
