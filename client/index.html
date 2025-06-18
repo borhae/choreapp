@@ -81,7 +81,7 @@
             <label className="mr-2">{t('language')}:</label>
             <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
               <option value="en">English</option>
-              <option value="es">Espa\u00f1ol</option>
+              <option value="es">Español</option>
                 <option value="de">Deutsch</option>
             </select>
           </div>
@@ -387,7 +387,7 @@
               <button className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded" onClick={onLogout}>{t('logout')}</button>
               <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
                 <option value="en">English</option>
-                <option value="es">Espa\u00f1ol</option>
+                <option value="es">Español</option>
                 <option value="de">Deutsch</option>
               </select>
             </div>
