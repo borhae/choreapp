@@ -145,6 +145,8 @@
       const builtinAvatars = { cat: '🐱', frog: '🐸', star: '⭐' };
       const [editingAvatar, setEditingAvatar] = useState(false);
       const [storedAvatars, setStoredAvatars] = useState([]);
+      const [weeklyGoals, setWeeklyGoals] = useState([]);
+      const [unfinishedGoals, setUnfinishedGoals] = useState(new Set());
 
       useEffect(() => {
         if (editingAvatar) {
@@ -195,17 +197,21 @@
       useEffect(() => { loadData(); }, [weekOffset]);
 
       async function loadData() {
-        const [logsRes, topRes] = await Promise.all([
+        const [logsRes, topRes, goalsRes] = await Promise.all([
           authFetch('/api/logs/all'),
-          authFetch('/api/chores/top')
+          authFetch('/api/chores/top'),
+          authFetch('/api/weekly-goals')
         ]);
         const logs = await logsRes.json();
         const top = await topRes.json();
+        const goals = await goalsRes.json();
+        setWeeklyGoals(goals);
         const start = startOfWeek(Date.now() + weekOffset * 7 * 86400000);
         const end = new Date(start);
         end.setDate(start.getDate() + 7);
         const groups = {};
         const map = {};
+        const done = new Set();
         logs.forEach(l => {
           const ts = new Date(l.ts);
           if (ts < start || ts >= end) return;
@@ -219,12 +225,23 @@
           }
           const abbrev = l.user.slice(0,3);
           map[key].entries.push({ user: abbrev, id: l.id, own: l.user === username });
+          done.add((grp + '|' + l.chore).toLowerCase());
         });
         top.forEach(ch => {
           const grp = ch.group || 'Ungrouped';
           if (!groups[grp]) groups[grp] = new Set();
           groups[grp].add(ch.name);
         });
+        const unfinished = new Set();
+        goals.forEach(g => {
+          const grp = g.group || 'Ungrouped';
+          if (!groups[grp]) groups[grp] = new Set();
+          groups[grp].add(g.name);
+          if (!done.has((grp + '|' + g.name).toLowerCase())) {
+            unfinished.add((grp + '|' + g.name).toLowerCase());
+          }
+        });
+        setUnfinishedGoals(unfinished);
         setChores(Object.entries(groups).map(([g, set]) => ({ group: g, chores: Array.from(set) })));
         setAssignments(Object.values(map));
       }
@@ -443,7 +460,8 @@
                           "font-medium p-3 border-r flex items-center cursor-pointer " +
                           (selectedChore.name === chore && selectedChore.group === group.group
                             ? 'bg-pantone564 text-white'
-                            : 'bg-pantone564/20 text-pantone564')
+                            : 'bg-pantone564/20 text-pantone564') +
+                          (unfinishedGoals.has((group.group + '|' + chore).toLowerCase()) ? ' bg-red-200' : '')
                         }
                         onClick={() => {
                           if (selectedDay) {
