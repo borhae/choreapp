@@ -69,6 +69,26 @@ async function initDB() {
     if (!Array.isArray(db.data.groups)) db.data.groups = [];
     if (!Array.isArray(db.data.weeklyGoals)) db.data.weeklyGoals = [];
     db.data.users.forEach(u => { if (!('avatar' in u)) u.avatar = ''; });
+    const dedupe = (arr, key) => {
+      const map = new Map();
+      arr.forEach(item => {
+        const k = key(item);
+        if (!map.has(k)) map.set(k, item);
+      });
+      return Array.from(map.values());
+    };
+    db.data.groups = dedupe(
+      db.data.groups.map(g => ({ ...g, name: (g.name || '').trim() })),
+      g => g.name.toLowerCase()
+    );
+    db.data.chores = dedupe(
+      db.data.chores.map(c => ({ ...c, name: (c.name || '').trim() })),
+      c => `${c.name.toLowerCase()}|${c.groupId || ''}`
+    );
+    db.data.weeklyGoals = dedupe(
+      db.data.weeklyGoals.map(g => ({ ...g, name: (g.name || '').trim() })),
+      g => `${g.name.toLowerCase()}|${g.groupId || ''}`
+    );
   }
   await db.write();
 }
@@ -151,11 +171,13 @@ app.get('/api/groups/autocomplete', authMiddleware, async (req, res) => {
   const query = (req.query.q || '').toLowerCase();
   await db.read();
   const results = db.data.groups.filter(g => g.name.toLowerCase().startsWith(query));
-  res.json(results.map(g => g.name));
+  const names = [...new Set(results.map(g => g.name))];
+  res.json(names);
 });
 
 app.post('/api/groups', authMiddleware, async (req, res) => {
-  const { name } = req.body;
+  let { name } = req.body;
+  name = (name || '').trim();
   if (!name) return res.status(400).json({ error: 'Missing group name' });
   await db.read();
   let group = db.data.groups.find(g => g.name.toLowerCase() === name.toLowerCase());
@@ -177,7 +199,9 @@ app.get('/api/weekly-goals', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/weekly-goals', authMiddleware, async (req, res) => {
-  const { name, group } = req.body;
+  let { name, group } = req.body;
+  name = (name || '').trim();
+  group = (group || '').trim();
   if (!name) return res.status(400).json({ error: 'Missing goal name' });
   await db.read();
   let groupId = null;
@@ -209,11 +233,14 @@ app.get('/api/chores/autocomplete', authMiddleware, async (req, res) => {
   const query = (req.query.q || '').toLowerCase();
   await db.read();
   const results = db.data.chores.filter(c => c.name.toLowerCase().startsWith(query));
-  res.json(results.map(c => c.name));
+  const names = [...new Set(results.map(c => c.name))];
+  res.json(names);
 });
 
 app.post('/api/chores', authMiddleware, async (req, res) => {
-  const { name, ts, group } = req.body;
+  let { name, ts, group } = req.body;
+  name = (name || '').trim();
+  group = (group || '').trim();
   if (!name) return res.status(400).json({ error: 'Missing chore name' });
   await db.read();
   let groupId = null;
