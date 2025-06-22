@@ -11,6 +11,7 @@ RUN npm install --production
 COPY server/requirements.txt server/requirements.txt
 RUN pip3 install --break-system-packages --no-cache-dir -r server/requirements.txt
 
+
 COPY . .
 
 EXPOSE 3000 5000
