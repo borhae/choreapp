@@ -71,3 +71,16 @@ Visit `http://localhost:3000/admin.html` for administrative tasks. The
 login uses the `ADMIN_USER` and `ADMIN_PASS` environment variables
 (defaults are `admin` / `adminpass`). After authentication you can view
 and delete uploaded avatar images.
+
+## OCR Backend
+
+An additional microservice provides optical character recognition for images of printed tables filled out by hand. It runs separately from the Node.js server and requires the `tesseract-ocr` binary to be installed on the host.
+
+Start the OCR server:
+
+```bash
+pip install -r server/requirements.txt
+python3 server/ocr_server.py
+```
+
+Send a POST request with an image file under the `image` form field to `http://localhost:5000/api/ocr` and you will receive the recognized text lines as JSON.
