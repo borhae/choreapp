@@ -49,7 +49,7 @@ docker build -t choreapp .
 Start the container and mount a host file to persist the database:
 
 ```bash
-docker run -p 3000:3000 \
+docker run -p 3000:3000 -p 5000:5000 \
   -v $(pwd)/db.json:/app/data/db.json \
   choreapp
 ```
@@ -59,7 +59,7 @@ location inside the container with the `DB_FILE` environment variable. Adjust
 the mounted path accordingly:
 
 ```bash
-docker run -p 3000:3000 \
+docker run -p 3000:3000 -p 5000:5000 \
   -e DB_FILE=/app/data/mydb.json \
   -v $(pwd)/mydb.json:/app/data/mydb.json \
   choreapp
@@ -71,3 +71,16 @@ Visit `http://localhost:3000/admin.html` for administrative tasks. The
 login uses the `ADMIN_USER` and `ADMIN_PASS` environment variables
 (defaults are `admin` / `adminpass`). After authentication you can view
 and delete uploaded avatar images.
+
+## OCR Backend
+
+An additional microservice provides optical character recognition for images of printed tables filled out by hand. The Docker image already includes Python, Tesseract and all Python dependencies so the service runs automatically on port `5000` alongside the Node.js backend.
+
+To run the OCR service outside the container:
+
+```bash
+pip install -r server/requirements.txt
+python3 server/ocr_server.py
+```
+
+Send a POST request with an image file under the `image` form field to `http://localhost:5000/api/ocr` and you will receive the recognized text lines as JSON.
