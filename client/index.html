@@ -402,6 +402,7 @@
               <button className="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded" onClick={addChore}>{t('add')}</button>
               <a href="all.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">{t('all_logs')}</a>
               <a href="goals.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">{t('weekly_goals')}</a>
+              <a href="ocr.html" className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded no-underline">{t('ocr_page')}</a>
               <button className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded" onClick={onLogout}>{t('logout')}</button>
               <select value={window.i18n.language} onChange={e => loadLanguage(e.target.value).then(()=>{window.location.reload();})} className="border p-1 rounded">
                 <option value="en">English</option>
