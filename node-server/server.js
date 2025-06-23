@@ -38,6 +38,7 @@ function fileFilter(req, file, cb) {
   cb(null, true);
 }
 const upload = multer({ storage, fileFilter });
+const memoryUpload = multer({ storage: multer.memoryStorage(), fileFilter });
 
 function broadcastUpdate() {
   const msg = JSON.stringify({ type: 'update' });
@@ -423,6 +424,19 @@ app.delete('/api/admin/avatars/:file', adminAuthMiddleware, async (req, res) => 
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+app.post('/api/ocr', memoryUpload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file' });
+  const form = new FormData();
+  form.append('image', new Blob([req.file.buffer]), req.file.originalname);
+  try {
+    const response = await fetch('http://localhost:5000/api/ocr', { method: 'POST', body: form });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to contact OCR server' });
   }
 });
 

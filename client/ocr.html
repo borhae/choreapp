@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR</title>
+  <link rel="icon" href="/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pantone564: '#05705e',
+            pantone604: '#e8dd21'
+          }
+        }
+      }
+    };
+  </script>
+  <script src="i18n.js"></script>
+</head>
+<body class="bg-gradient-to-br from-pantone604/10 to-pantone564/10 min-h-screen flex items-center justify-center">
+  <div id="app" class="max-w-md w-full p-6"></div>
+
+  <script>
+    loadLanguage(localStorage.getItem('lang') || 'en').then(init);
+
+    function init() {
+      const root = document.getElementById('app');
+      root.innerHTML = `
+        <div class="bg-white p-4 rounded shadow space-y-2">
+          <h1 class="text-xl font-bold text-pantone564 mb-2">${t('ocr_page')}</h1>
+          <input type="file" id="image" accept="image/*" class="w-full" />
+          <button id="upload" class="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded w-full">${t('upload_image')}</button>
+          <pre id="result" class="whitespace-pre-wrap mt-2"></pre>
+          <div class="flex justify-between items-center">
+            <a href="index.html" class="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded no-underline">${t('back')}</a>
+            <div class="flex items-center text-sm">
+              <label class="mr-1">${t('language')}:</label>
+              <select id="lang-select" class="border p-1 rounded">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('lang-select').value = window.i18n.language;
+      document.getElementById('lang-select').onchange = e => loadLanguage(e.target.value).then(()=>{location.reload();});
+      document.getElementById('upload').onclick = async () => {
+        const file = document.getElementById('image').files[0];
+        if (!file) return alert(t('upload_failed'));
+        const form = new FormData();
+        form.append('image', file);
+        try {
+          const res = await fetch('/api/ocr', { method: 'POST', body: form });
+          const data = await res.json();
+          if (res.ok) {
+            document.getElementById('result').textContent = data.text || '';
+          } else {
+            document.getElementById('result').textContent = data.error || t('upload_failed');
+          }
+        } catch (err) {
+          document.getElementById('result').textContent = t('upload_failed');
+        }
+      };
+    }
+  </script>
+</body>
+</html>
