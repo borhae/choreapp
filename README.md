@@ -66,10 +66,15 @@ docker run -p 3000:3000 \
   choreapp-node
 ```
 
-Run the OCR service in a separate container:
+The Node backend expects the OCR service on port `5000`. Set `OCR_PORT` when
+running both containers if you choose a different port.
+
+Run the OCR service in a separate container. It listens on port `5000` by default, but you can set a different port with the `OCR_PORT` environment variable:
 
 ```bash
 docker run -p 5000:5000 choreapp-ocr
+# or for a custom port
+docker run -p 6000:6000 -e OCR_PORT=6000 choreapp-ocr
 ```
 
 ## Admin page
@@ -81,7 +86,7 @@ and delete uploaded avatar images.
 
 ## OCR Backend
 
-An additional microservice provides optical character recognition for images of printed tables filled out by hand. It is packaged as a separate Docker image and listens on port `5000`.
+An additional microservice provides optical character recognition for images of printed tables filled out by hand. It is packaged as a separate Docker image and listens on port `5000` by default.
 
 To run the OCR service outside the container:
 
@@ -90,4 +95,4 @@ pip install -r ocr-server/requirements.txt
 python3 ocr-server/ocr_server.py
 ```
 
-Send a POST request with an image file under the `image` form field to `http://localhost:5000/api/ocr` and you will receive the recognized text lines as JSON.
+Send a POST request with an image file under the `image` form field to `http://localhost:<OCR_PORT>/api/ocr` (replace `<OCR_PORT>` with the port in use) and you will receive the recognized text lines as JSON.
