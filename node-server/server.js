@@ -431,8 +431,9 @@ app.post('/api/ocr', memoryUpload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
   const form = new FormData();
   form.append('image', new Blob([req.file.buffer]), req.file.originalname);
+  const ocrPort = process.env.OCR_PORT || 5000;
   try {
-    const response = await fetch('http://localhost:5000/api/ocr', { method: 'POST', body: form });
+    const response = await fetch(`http://localhost:${ocrPort}/api/ocr`, { method: 'POST', body: form });
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err) {
