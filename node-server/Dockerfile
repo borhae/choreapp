@@ -9,4 +9,4 @@ COPY node-server ./node-server
 COPY data ./data
 RUN mkdir -p data/avatars
 EXPOSE 3000
-CMD ["node", "server/server.js"]
+CMD ["node", "node-server/server.js"]
