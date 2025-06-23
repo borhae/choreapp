@@ -30,7 +30,7 @@ npm install
 Run the server:
 
 ```bash
-node server/server.js
+node node-server/server.js
 ```
 
 The app will be available at `http://localhost:3000`.
@@ -38,20 +38,21 @@ The app will be available at `http://localhost:3000`.
 
 ## Docker
 
-You can also run the app in a container. Build the image:
+You can also run the app in containers. Build the images:
 
 Authentication tokens expire after **1 day**, so you'll need to log in again once a token has expired.
 
 ```bash
-docker build -t choreapp .
+docker build -t choreapp-node -f node-server/Dockerfile .
+docker build -t choreapp-ocr -f ocr-server/Dockerfile .
 ```
 
-Start the container and mount a host file to persist the database:
+Start the Node backend and mount a host file to persist the database:
 
 ```bash
-docker run -p 3000:3000 -p 5000:5000 \
+docker run -p 3000:3000 \
   -v $(pwd)/db.json:/app/data/db.json \
-  choreapp
+  choreapp-node
 ```
 
 The server uses `/app/data/db.json` by default. You can specify a different
@@ -59,10 +60,16 @@ location inside the container with the `DB_FILE` environment variable. Adjust
 the mounted path accordingly:
 
 ```bash
-docker run -p 3000:3000 -p 5000:5000 \
+docker run -p 3000:3000 \
   -e DB_FILE=/app/data/mydb.json \
   -v $(pwd)/mydb.json:/app/data/mydb.json \
-  choreapp
+  choreapp-node
+```
+
+Run the OCR service in a separate container:
+
+```bash
+docker run -p 5000:5000 choreapp-ocr
 ```
 
 ## Admin page
@@ -74,13 +81,13 @@ and delete uploaded avatar images.
 
 ## OCR Backend
 
-An additional microservice provides optical character recognition for images of printed tables filled out by hand. The Docker image already includes Python, Tesseract and all Python dependencies so the service runs automatically on port `5000` alongside the Node.js backend.
+An additional microservice provides optical character recognition for images of printed tables filled out by hand. It is packaged as a separate Docker image and listens on port `5000`.
 
 To run the OCR service outside the container:
 
 ```bash
-pip install -r server/requirements.txt
-python3 server/ocr_server.py
+pip install -r ocr-server/requirements.txt
+python3 ocr-server/ocr_server.py
 ```
 
 Send a POST request with an image file under the `image` form field to `http://localhost:5000/api/ocr` and you will receive the recognized text lines as JSON.

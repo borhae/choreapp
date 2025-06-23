@@ -3,10 +3,10 @@ WORKDIR /app
 
 RUN apk add --no-cache tesseract-ocr
 
-COPY server/requirements.txt ./requirements.txt
+COPY ocr-server/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY server/ocr_server.py ./ocr_server.py
+COPY ocr-server ./ocr-server
 
 EXPOSE 5000
 CMD ["python3", "ocr_server.py"]
