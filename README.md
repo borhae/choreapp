@@ -66,8 +66,11 @@ docker run -p 3000:3000 \
   choreapp-node
 ```
 
-The Node backend expects the OCR service on port `5000`. Set `OCR_PORT` when
-running both containers if you choose a different port.
+The Node backend expects the OCR service on port `5000` and at host `localhost`
+by default. When running the OCR service in a separate container, set `OCR_HOST`
+to the OCR container's hostname or IP address and ensure both containers share a
+Docker network. Set `OCR_PORT` when running both containers if you choose a
+different port.
 
 Run the OCR service in a separate container. It listens on port `5000` by default, but you can set a different port with the `OCR_PORT` environment variable:
 
