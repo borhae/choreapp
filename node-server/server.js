@@ -432,11 +432,14 @@ app.post('/api/ocr', memoryUpload.single('image'), async (req, res) => {
   const form = new FormData();
   form.append('image', new Blob([req.file.buffer]), req.file.originalname);
   const ocrPort = process.env.OCR_PORT || 5000;
+  console.log(`Sending OCR request to http://localhost:${ocrPort}/api/ocr`);
   try {
     const response = await fetch(`http://localhost:${ocrPort}/api/ocr`, { method: 'POST', body: form });
     const data = await response.json();
+    console.log('OCR server responded with status', response.status);
     res.status(response.status).json(data);
   } catch (err) {
+    console.error('Error contacting OCR server:', err);
     res.status(500).json({ error: 'Failed to contact OCR server' });
   }
 });
@@ -444,4 +447,11 @@ app.post('/api/ocr', memoryUpload.single('image'), async (req, res) => {
 app.use(express.static(path.join(__dirname, '../client')));
 
 const PORT = process.env.PORT || 3000;
+console.log('Configuration:');
+console.log(' PORT:', PORT);
+console.log(' DB_FILE:', dbFile);
+console.log(' OCR_PORT:', process.env.OCR_PORT || 5000);
+console.log(' ADMIN_USER:', ADMIN_USER);
+console.log(' ADMIN_PASS:', ADMIN_PASS ? '***' : '(default)');
+console.log(' SECRET set:', !!process.env.SECRET);
 server.listen(PORT, () => console.log('Server listening on', PORT));
