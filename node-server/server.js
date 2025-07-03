@@ -393,6 +393,23 @@ app.post('/api/users/avatar', authMiddleware, (req, res) => {
   });
 });
 
+// Update username
+app.post('/api/users/username', authMiddleware, async (req, res) => {
+  let { username } = req.body;
+  username = (username || '').trim();
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+  await db.read();
+  const conflict = db.data.users.find(u => u.username === username && u.id !== req.user.id);
+  if (conflict) return res.status(400).json({ error: 'Username taken' });
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.username = username;
+  await db.write();
+  broadcastUpdate();
+  const token = jwt.sign({ id: user.id, username: user.username }, SECRET, { expiresIn: '1d' });
+  res.json({ message: 'Username updated', username: user.username, token });
+});
+
 app.get('/api/avatars', authMiddleware, async (req, res) => {
   fs.readdir(avatarsDir, (err, files) => {
     if (err) return res.status(500).json({ error: 'Failed to read avatars' });
