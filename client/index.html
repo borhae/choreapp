@@ -144,19 +144,19 @@
       const [username, setUsername] = useState(initialUsername);
       const [avatar, setAvatar] = useState('');
       const builtinAvatars = { cat: '🐱', frog: '🐸', star: '⭐' };
-      const [editingAvatar, setEditingAvatar] = useState(false);
+      const [editingProfile, setEditingProfile] = useState(false);
       const [storedAvatars, setStoredAvatars] = useState([]);
       const [weeklyGoals, setWeeklyGoals] = useState([]);
       const [unfinishedGoals, setUnfinishedGoals] = useState(new Set());
 
       useEffect(() => {
-        if (editingAvatar) {
+        if (editingProfile) {
           authFetch('/api/avatars')
             .then(r => r.json())
             .then(setStoredAvatars)
             .catch(() => {});
         }
-      }, [editingAvatar]);
+      }, [editingProfile]);
 
       useEffect(() => {
         const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -392,13 +392,8 @@
                   {builtinAvatars[avatar || 'star']}
                 </div>
               )}
-              <button className="bg-gray-200 px-2 py-1 rounded" onClick={() => setEditingAvatar(!editingAvatar)}>{t('edit')}</button>
-              <input
-                className="border p-1 rounded"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-              />
-              <button className="bg-pantone564 text-white px-2 py-1 rounded" onClick={saveUsername}>{t('save')}</button>
+              <span className="font-medium">{username}</span>
+              <button className="px-1" onClick={() => setEditingProfile(true)} title={t('edit')}>✏️</button>
               <input
                 list="chore-suggestions"
                 className="flex-1 border p-2 rounded"
@@ -432,8 +427,24 @@
                 <option value="de">Deutsch</option>
               </select>
             </div>
-            {editingAvatar && (
+            {editingProfile && (
               <div className="mt-2 flex gap-2 items-center">
+                <div className="flex items-center gap-2">
+                  {avatar && avatar.includes('.') ? (
+                    <img src={'/avatars/' + avatar} className="w-16 h-16 rounded-full border object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full border flex items-center justify-center text-2xl">
+                      {builtinAvatars[avatar || 'star']}
+                    </div>
+                  )}
+                  <input
+                    className="border p-1 rounded"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                  />
+                  <button className="bg-pantone564 text-white px-2 py-1 rounded" onClick={async ()=>{await saveUsername();setEditingProfile(false);}}>{t('save')}</button>
+                  <button className="px-2 py-1 bg-gray-200 rounded" onClick={() => setEditingProfile(false)}>{t('close')}</button>
+                </div>
                 {Object.entries(builtinAvatars).map(([name, emoji]) => (
                   <button
                     key={name}
@@ -452,7 +463,6 @@
                   />
                 ))}
                 <input type="file" accept="image/*" onChange={uploadAvatar} />
-                <button className="px-2 py-1 bg-gray-200 rounded" onClick={() => setEditingAvatar(false)}>{t('close')}</button>
               </div>
             )}
           </div>
