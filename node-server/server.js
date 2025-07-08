@@ -462,6 +462,28 @@ app.post('/api/ocr', memoryUpload.single('image'), async (req, res) => {
   }
 });
 
+app.post('/api/ocr/preview', memoryUpload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file' });
+  const form = new FormData();
+  form.append('image', new Blob([req.file.buffer]), req.file.originalname);
+  const ocrHost = process.env.OCR_HOST || 'localhost';
+  const ocrPort = process.env.OCR_PORT || 5000;
+  console.log(`Sending preview request to http://${ocrHost}:${ocrPort}/api/preprocess`);
+  try {
+    const response = await fetch(`http://${ocrHost}:${ocrPort}/api/preprocess`, { method: 'POST', body: form });
+    if (!response.ok) {
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    }
+    const buf = Buffer.from(await response.arrayBuffer());
+    res.set('Content-Type', response.headers.get('Content-Type') || 'image/png');
+    res.send(buf);
+  } catch (err) {
+    console.error('Error contacting OCR server:', err);
+    res.status(500).json({ error: 'Failed to contact OCR server' });
+  }
+});
+
 app.use(express.static(path.join(__dirname, '../client')));
 
 const PORT = process.env.PORT || 3000;
