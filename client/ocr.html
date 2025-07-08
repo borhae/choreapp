@@ -33,6 +33,13 @@
           <h1 class="text-xl font-bold text-pantone564 mb-2">${t('ocr_page')}</h1>
           <input type="file" id="image" accept="image/*" class="w-full" />
           <button id="upload" class="bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded w-full">${t('upload_image')}</button>
+          <div id="preview" class="space-y-2 hidden">
+            <img id="preview-img" class="max-w-full" />
+            <div class="flex space-x-2">
+              <button id="approve" class="flex-1 bg-pantone564 hover:bg-pantone564/90 text-white px-3 py-2 rounded">${t('approve')}</button>
+              <button id="cancel" class="flex-1 bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded">${t('cancel')}</button>
+            </div>
+          </div>
           <pre id="result" class="whitespace-pre-wrap mt-2"></pre>
           <div class="flex justify-between items-center">
             <a href="index.html" class="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded no-underline">${t('back')}</a>
@@ -48,11 +55,32 @@
         </div>`;
       document.getElementById('lang-select').value = window.i18n.language;
       document.getElementById('lang-select').onchange = e => loadLanguage(e.target.value).then(()=>{location.reload();});
+      let processedBlob = null;
       document.getElementById('upload').onclick = async () => {
         const file = document.getElementById('image').files[0];
         if (!file) return alert(t('upload_failed'));
         const form = new FormData();
         form.append('image', file);
+        try {
+          const res = await fetch('/api/ocr/preview', { method: 'POST', body: form });
+          if (!res.ok) {
+            const data = await res.json();
+            document.getElementById('result').textContent = data.error || t('preview_failed');
+            return;
+          }
+          processedBlob = await res.blob();
+          document.getElementById('preview-img').src = URL.createObjectURL(processedBlob);
+          document.getElementById('preview').classList.remove('hidden');
+          document.getElementById('result').textContent = '';
+        } catch (err) {
+          document.getElementById('result').textContent = t('preview_failed');
+        }
+      };
+
+      document.getElementById('approve').onclick = async () => {
+        if (!processedBlob) return;
+        const form = new FormData();
+        form.append('image', processedBlob, 'processed.png');
         try {
           const res = await fetch('/api/ocr', { method: 'POST', body: form });
           const data = await res.json();
@@ -64,6 +92,13 @@
         } catch (err) {
           document.getElementById('result').textContent = t('upload_failed');
         }
+        document.getElementById('preview').classList.add('hidden');
+        processedBlob = null;
+      };
+
+      document.getElementById('cancel').onclick = () => {
+        processedBlob = null;
+        document.getElementById('preview').classList.add('hidden');
       };
     }
   </script>

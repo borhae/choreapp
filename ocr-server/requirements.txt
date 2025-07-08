@@ -1,3 +1,5 @@
 flask
 pillow
 pytesseract
+opencv-python-headless
+numpy
