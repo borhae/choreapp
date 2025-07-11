@@ -100,7 +100,7 @@ python3 ocr-server/ocr_server.py
 
 Send a POST request with an image file under the `image` form field to `http://localhost:<OCR_PORT>/api/ocr` (replace `<OCR_PORT>` with the port in use) and you will receive the recognized text lines as JSON.
 
-To preview the automatic deskew step before running OCR, POST the file to
-`/api/preprocess`. The service returns a corrected image that can be shown to the
-user for approval. Once approved, send that processed image back to `/api/ocr` to
-obtain the text.
+To preview the automatic deskew and dewarp step before running OCR, POST the file
+to `/api/preprocess`. The service returns a corrected image that can be shown to
+the user for approval. Once approved, send that processed image back to
+`/api/ocr` to obtain the text.
