@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageOps
 import logging
 import cv2
 import numpy as np
@@ -12,6 +12,9 @@ app = Flask(__name__)
 def preprocess_image(pil_img):
     """Attempt to deskew the image using its text lines."""
     try:
+        # Respect EXIF orientation so the deskew step works on the image as it
+        # should appear to the user.
+        pil_img = ImageOps.exif_transpose(pil_img)
         img = np.array(pil_img)
         if img.ndim == 2:
             gray = img
@@ -26,8 +29,18 @@ def preprocess_image(pil_img):
         else:
             angle = -angle
         (h, w) = img.shape[:2]
-        M = cv2.getRotationMatrix2D((w // 2, h // 2), angle, 1.0)
-        rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+        M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
+        # Compute new bounding dimensions to avoid cropping for large angles
+        cos = abs(M[0, 0])
+        sin = abs(M[0, 1])
+        nW = int((h * sin) + (w * cos))
+        nH = int((h * cos) + (w * sin))
+        # Adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - w / 2
+        M[1, 2] += (nH / 2) - h / 2
+        rotated = cv2.warpAffine(
+            img, M, (nW, nH), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+        )
         return Image.fromarray(rotated)
     except Exception as exc:
         app.logger.warning('Preprocess failed: %s', exc)
