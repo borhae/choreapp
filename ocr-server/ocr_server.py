@@ -6,44 +6,93 @@ import cv2
 import numpy as np
 from io import BytesIO
 
+
+def _order_points(pts: np.ndarray) -> np.ndarray:
+    """Return points ordered as top-left, top-right, bottom-right, bottom-left."""
+    rect = np.zeros((4, 2), dtype="float32")
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
+    return rect
+
 app = Flask(__name__)
 
 
-def preprocess_image(pil_img):
-    """Attempt to deskew the image using its text lines."""
+def preprocess_image(pil_img: Image.Image) -> Image.Image:
+    """Deskew and dewarp the image for better OCR results."""
     try:
         # Respect EXIF orientation so the deskew step works on the image as it
         # should appear to the user.
         pil_img = ImageOps.exif_transpose(pil_img)
         img = np.array(pil_img)
+
+        # --- Attempt perspective correction ---------------------------------
         if img.ndim == 2:
             gray = img
         else:
             gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blurred, 75, 200)
+        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
+        screen = None
+        for c in cnts:
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            if len(approx) == 4:
+                screen = approx
+                break
+
+        if screen is not None:
+            rect = _order_points(screen.reshape(4, 2))
+            (tl, tr, br, bl) = rect
+            widthA = np.linalg.norm(br - bl)
+            widthB = np.linalg.norm(tr - tl)
+            maxW = max(int(widthA), int(widthB))
+            heightA = np.linalg.norm(tr - br)
+            heightB = np.linalg.norm(tl - bl)
+            maxH = max(int(heightA), int(heightB))
+            dst = np.array(
+                [[0, 0], [maxW - 1, 0], [maxW - 1, maxH - 1], [0, maxH - 1]],
+                dtype="float32",
+            )
+            M = cv2.getPerspectiveTransform(rect, dst)
+            warped = cv2.warpPerspective(
+                img, M, (maxW, maxH), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+            )
+        else:
+            warped = img
+
+        # --- Deskew ---------------------------------------------------------
+        if warped.ndim == 2:
+            gray = warped
+        else:
+            gray = cv2.cvtColor(warped, cv2.COLOR_RGB2GRAY)
         gray = cv2.bitwise_not(gray)
-        thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+        thresh = cv2.threshold(
+            gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU
+        )[1]
         coords = np.column_stack(np.where(thresh > 0))
         angle = cv2.minAreaRect(coords)[-1]
-        if angle < -45:
-            angle = -(90 + angle)
-        else:
-            angle = -angle
-        (h, w) = img.shape[:2]
+        angle = -(90 + angle) if angle < -45 else -angle
+        (h, w) = warped.shape[:2]
         M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
-        # Compute new bounding dimensions to avoid cropping for large angles
         cos = abs(M[0, 0])
         sin = abs(M[0, 1])
         nW = int((h * sin) + (w * cos))
         nH = int((h * cos) + (w * sin))
-        # Adjust the rotation matrix to take into account translation
         M[0, 2] += (nW / 2) - w / 2
         M[1, 2] += (nH / 2) - h / 2
         rotated = cv2.warpAffine(
-            img, M, (nW, nH), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+            warped, M, (nW, nH), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
         return Image.fromarray(rotated)
     except Exception as exc:
-        app.logger.warning('Preprocess failed: %s', exc)
+        app.logger.warning("Preprocess failed: %s", exc)
         return pil_img
 
 
