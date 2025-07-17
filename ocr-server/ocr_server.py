@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify, send_file
-import pytesseract
+import easyocr
 from PIL import Image, ImageOps
 import logging
 import cv2
 import numpy as np
 from io import BytesIO
-
+from transformers import AutoImageProcessor, TableTransformerForObjectDetection
+import torch
 
 def _order_points(pts: np.ndarray) -> np.ndarray:
     """Return points ordered as top-left, top-right, bottom-right, bottom-left."""
@@ -19,6 +20,9 @@ def _order_points(pts: np.ndarray) -> np.ndarray:
     return rect
 
 app = Flask(__name__)
+reader = easyocr.Reader(['en'])
+image_processor = AutoImageProcessor.from_pretrained("microsoft/table-transformer-detection")
+model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-detection")
 
 
 def preprocess_image(pil_img: Image.Image) -> Image.Image:
@@ -27,6 +31,19 @@ def preprocess_image(pil_img: Image.Image) -> Image.Image:
         # Respect EXIF orientation so the deskew step works on the image as it
         # should appear to the user.
         pil_img = ImageOps.exif_transpose(pil_img)
+
+        # --- Table Detection and Cropping -----------------------------------
+        inputs = image_processor(images=pil_img, return_tensors="pt")
+        outputs = model(**inputs)
+        target_sizes = torch.tensor([pil_img.size[::-1]])
+        results = image_processor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)[0]
+
+        if len(results["boxes"]) > 0:
+            # take the box with the highest score
+            best_box = results["boxes"][torch.argmax(results["scores"])]
+            # crop the image to the detected table
+            pil_img = pil_img.crop(best_box.tolist())
+
         img = np.array(pil_img)
 
         # --- Attempt perspective correction ---------------------------------
@@ -103,7 +120,7 @@ def preprocess_route():
         return jsonify({'error': 'No image file'}), 400
     file = request.files['image']
     try:
-        image = Image.open(file.stream)
+        image = Image.open(file.stream).convert("RGB")
     except Exception:
         app.logger.warning('Invalid image file')
         return jsonify({'error': 'Invalid image'}), 400
@@ -121,15 +138,16 @@ def ocr_image():
         return jsonify({'error': 'No image file'}), 400
     file = request.files['image']
     try:
-        image = Image.open(file.stream)
+        image = Image.open(file.stream).convert("RGB")
     except Exception:
         app.logger.warning('Invalid image file')
         return jsonify({'error': 'Invalid image'}), 400
     app.logger.info('Running OCR on received image')
     image = preprocess_image(image)
-    text = pytesseract.image_to_string(image)
-    # Split lines and remove empties
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    image_np = np.array(image)
+    result = reader.readtext(image_np)
+    text = "\n".join([item[1] for item in result])
+    lines = [item[1] for item in result]
     return jsonify({'text': text, 'lines': lines})
 
 if __name__ == '__main__':
